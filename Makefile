@@ -90,4 +90,4 @@ file-rewriting:
 	export MVM_TEMP_FILE=$(TEMP)/__temp_file ; ./scripts/file-processor.sh $(APP) $(TARGET_MODULES)
 
 clean:
-	rm -rf *.o ; rm $(EXECUTABLE)
+	find . -type f \( -name "*.o" -o -name "*.a" -o -name "*.so" -o -name "*.out" \) -delete
