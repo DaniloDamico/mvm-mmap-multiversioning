@@ -36,7 +36,8 @@ UDTEMPOBJ = -Duser_defined_temp_obj_file=\"$(USER_DEFINED)/$(USER_DEFINED_OBJ_FI
 
 SECURITY_FLAGS = -pie -fPIE -fstack-protector-all
 
-ADDITIONAL_FLAGS = -O3 -DASM_PREAMBLE -DAPPLY_PATCHES -DVERBOSE
+ADDITIONAL_FLAGS = -O3 -DASM_PREAMBLE -DAPPLY_PATCHES 
+# -DVERBOSE
 #NOTE: 
 #the ASM_PREAMBLE macro enables building a demo patch for each memory access instruction
 #which passess control to a trampoline that calls the the_patch(...) fuction
@@ -50,7 +51,7 @@ THE_VM = -DVM_NAME=\"MVM\"
 all: checks backup-files file-rewriting compile-and-link restore-files
 
 compile-and-link: movm
-	export C_INCLUDE_PATH=$(PWD)/include; cd $(APP) ; make ; gcc $(APP_OBJ) $(LIB)/movm.o -o $(EXECUTABLE) $(SECURITY_FLAGS) $(ADDITIONAL_FLAGS) $(LIBS) -Xlinker --wrap=main
+	export C_INCLUDE_PATH=$(PWD)/include; cd $(APP) ; make ; gcc $(APP_OBJ) $(LIB)/movm.o -o $(EXECUTABLE) $(SECURITY_FLAGS) $(ADDITIONAL_FLAGS) $(LIBS) -Xlinker --wrap=main -Xlinker --wrap=mmap
 	objdump -Dw $(EXECUTABLE) > $(DISASSEMBLY) 
 
 checks:

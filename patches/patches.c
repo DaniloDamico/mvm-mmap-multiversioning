@@ -1,13 +1,46 @@
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <fcntl.h>
+#include <stddef.h>
+#include <stdint.h>
 #include "elf_parse.h"
+#include <sys/mman.h>
 
 
 void the_patch (unsigned long, unsigned long) __attribute__((used));
+
+static uintptr_t g_base = 0;
+static size_t    g_len  = 0;
+
+void mvmm_region_register(void *base, size_t len) {
+    g_base = (uintptr_t)base;
+    g_len  = len;
+}
+
+static inline int mvmm_is_tracked_address(void *p) {
+    uintptr_t a = (uintptr_t)p;
+    return (g_base != 0 && a >= g_base && a < g_base + g_len);
+}
+
+
+void mvmm_region_register(void *base, size_t len);  // la implementerai tu (può stare anche in patches.c all’inizio)
+
+void* __real_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
+
+void* __wrap_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset) {
+    void *p = __real_mmap(addr, length, prot, flags, fd, offset);
+    if (p != MAP_FAILED) {
+        mvmm_region_register(p, length);
+        // debug temporaneo:
+        fprintf(stderr, "[mvmm] mmap %p len=%zu\n", p, length);
+    }
+    return p;
+}
+
 
 //the_patch(...) is the default function offered by MVM for instrumenting whatever 
 //memory load/store instruction
@@ -16,7 +49,7 @@ void the_patch (unsigned long, unsigned long) __attribute__((used));
 //it passes through C programming hence it has the intrinsic cost of CPU 
 //snapshot save/restore to/from the stack when taking control or passing it back
 //this function takes the pointers to the instruction metadata and CPU snapshot
-
+/** 
 void the_patch(unsigned long mem, unsigned long regs){
 	instruction_record *instruction = (instruction_record*) mem;
 	target_address *target;
@@ -24,7 +57,7 @@ void the_patch(unsigned long mem, unsigned long regs){
 	unsigned long address;
 
 	AUDIT
-	printf("memory access done by the application at instrumented instruction indexed by %d\n",instruction->record_index);	
+	//printf("memory access done by the application at instrumented instruction indexed by %d\n",instruction->record_index);	
 
 	if(instruction->effective_operand_address != 0x0){
 		printf("__mvm: accessed address is %p - data size is %d access type is %c\n",(void*)instruction->effective_operand_address,instruction->data_size,instruction->type);	
@@ -32,7 +65,7 @@ void the_patch(unsigned long mem, unsigned long regs){
 	else{
 		target = &(instruction->target);
 		//AUDIT
-		printf("__mvm: accessing memory according to %lu - %lu - %lu - %lu\n",target->displacement,target->base_index,target->scale_index,target->scale);
+		//printf("__mvm: accessing memory according to %lu - %lu - %lu - %lu\n",target->displacement,target->base_index,target->scale_index,target->scale);
 		if (target->base_index) memcpy((char*)&A,(char*)(regs + 8*(target->base_index-1)),8);
 		if (target->scale_index) memcpy((char*)&B,(char*)(regs + 8*(target->scale_index-1)),8);
 		address = (unsigned long)((long)target->displacement + (long)A + (long)((long)B * (long)target->scale));
@@ -42,6 +75,48 @@ void the_patch(unsigned long mem, unsigned long regs){
 
 	return;
 }
+*/
+
+/**
+ * Computes the effective address of a memory operand for a given instruction record and CPU register state.
+ */
+static inline unsigned long mvm_get_ea(instruction_record *instruction, unsigned long regs) {
+    if (instruction->effective_operand_address != 0x0)
+        return instruction->effective_operand_address;
+
+    target_address *t = &instruction->target;
+
+    unsigned long A = 0, B = 0;
+    if (t->base_index)  memcpy(&A, (void *)(regs + 8*(t->base_index-1)), 8);
+    if (t->scale_index) memcpy(&B, (void *)(regs + 8*(t->scale_index-1)), 8);
+
+    return (unsigned long)((long)t->displacement + (long)A + (long)((long)B * (long)t->scale));
+}
+
+/**
+ * implementa la logica di gestione delle versioni per una sottoregione di memoria, intercettando le operazioni di scrittura e creando, quando necessario, una nuova versione consistente della sottoregione stessa.”
+ */
+void mvmm_handle_store(void *addr) {
+    // TODO implementare la logica di gestione delle versioni
+    printf("__mvm: store handled at address %p\n", addr);
+    fflush(stdout);
+}
+
+
+void the_patch(unsigned long mem, unsigned long regs) {
+    instruction_record *ins = (instruction_record*) mem;
+
+// TODO in futuro modificare anche le load, quando metteró il cambio di versione
+    if (ins->type != 's') return;
+
+    unsigned long ea = mvm_get_ea(ins, regs);
+    if (ea == 0) return;
+
+    if (!mvmm_is_tracked_address((void*)ea)) return;
+
+    mvmm_handle_store((void*)ea);
+}
+
 
 
 

@@ -1,0 +1,13 @@
+# Object files
+*.o
+
+# Static / shared libraries
+*.a
+*.so
+
+# Disassembly and temp files
+temp/
+*.out
+
+# Backup artifacts
+backup.tar

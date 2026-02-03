@@ -1,1 +1,1 @@
-mov %eax,0x200000(%rdx)
+mov %edx,0x200000(%rax)
