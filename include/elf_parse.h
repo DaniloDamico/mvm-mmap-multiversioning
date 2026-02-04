@@ -12,9 +12,9 @@
 
 typedef struct _target_address{
 	long displacement;
-	long int base_index;
-	long int  scale_index;
-	unsigned long scale;
+	long int base_index; // registro base
+	long int  scale_index; // registro indice
+	unsigned long scale; // moltiplicatore
 } target_address;
 
 typedef struct _instruction_record{
