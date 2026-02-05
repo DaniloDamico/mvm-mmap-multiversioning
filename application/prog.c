@@ -1,5 +1,7 @@
 #include "mvm.h"
 #include "mvm.h"
+#include "mvm.h"
+#include "mvm.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -26,6 +28,8 @@ void* function(void * whoami){
     if (p == MAP_FAILED) {
 INSTRUMENT;
 INSTRUMENT;
+INSTRUMENT;
+INSTRUMENT;
         perror("mmap");
         return NULL;
     }
@@ -37,11 +41,15 @@ INSTRUMENT;
     for (int i = 0; i < pages_to_touch; i++) {
 INSTRUMENT;
 INSTRUMENT;
+INSTRUMENT;
+INSTRUMENT;
         p[i * (int)ints_per_page] = (int)(me * 1000 + i);
     }
 
     // molte scritture per far avanzare il contatore (timestamp)
     for (int round = 0; round < 20000; round++) {
+INSTRUMENT;
+INSTRUMENT;
 INSTRUMENT;
 INSTRUMENT;
         int idx = (round % pages_to_touch) * (int)ints_per_page;
@@ -65,10 +73,14 @@ job:
 	pthread_create(&tid[i],NULL,function,(void*)i);
 	if(++i < NUM_THREADS) {
 INSTRUMENT;
+INSTRUMENT;
+INSTRUMENT;
 	INSTRUMENT;
 goto job;}
 
 	for(i=0;i<NUM_THREADS;i++){
+INSTRUMENT;
+INSTRUMENT;
 INSTRUMENT;
 INSTRUMENT;
 		pthread_join(tid[i],NULL);

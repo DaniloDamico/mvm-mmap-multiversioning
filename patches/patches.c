@@ -16,10 +16,15 @@
 #endif
 
 #ifndef ROTATE_EVERY
-#define ROTATE_EVERY 1000
+#define ROTATE_EVERY 200
 #endif
 
 #define MVMM_PAGE_SIZE 4096
+
+// per una demo mettiamo il rollback dopo 500 scritture
+#define MVMM_ROLLBACK_AT_WRITES 500
+
+static _Atomic int g_rollback_done = 0;
 
 /*
  * Stato per pagina
@@ -61,6 +66,7 @@ static pthread_rwlock_t g_regions_lock = PTHREAD_RWLOCK_INITIALIZER;
 
 
 void the_patch(unsigned long mem, unsigned long regs) __attribute__((used));
+static void mvmm_maybe_trigger_rollback(uint64_t wc_now) __attribute__((used));
 
 /*
  * Alloca una pagina allineata a g_page_size
@@ -192,6 +198,7 @@ static void mvmm_region_register(void *base, size_t len) {
     r->pages = (mvmm_page_state *)calloc(r->npages, sizeof(*r->pages));
     if (!r->pages) {
         fprintf(stderr, "[mvmm] alloc pages failed\n");
+        free(node);
         abort();
     }
 
@@ -205,12 +212,12 @@ static void mvmm_region_register(void *base, size_t len) {
         atomic_store(&ps->last_ts_seen, UINT64_MAX); // timestamp impossibile
         atomic_store(&ps->cur_slot, 0); // slot corrente 0
 
-        ps->slots[0] = (void *)(r->base + i * MVMM_PAGE_SIZE); // indirizzo pagina 0
-        atomic_store(&ps->slot_ts[0], 0); // timestamp slot 0 a 0
+        atomic_store_explicit(&ps->slots[0], (void *)(r->base + i * MVMM_PAGE_SIZE), memory_order_relaxed); // indirizzo pagina 0
+        atomic_store_explicit(&ps->slot_ts[0], 0, memory_order_relaxed); // timestamp slot 0 a 0
 
         // tutte le altre pagine non le inizializziamo
         for (uint32_t s = 1; s < MVMM_MAX_VERSIONS; s++) {
-            ps->slots[s] = NULL;
+            atomic_store_explicit(&ps->slots[s], NULL, memory_order_relaxed);
             atomic_store(&ps->slot_ts[s], UINT64_MAX);
         }
     }
@@ -263,6 +270,10 @@ static inline uintptr_t mvmm_translate_ea(mvmm_region *r,
     if (is_store) {
         // aumenta timestamp
         uint64_t wc = atomic_fetch_add_explicit(&g_write_counter, 1, memory_order_relaxed) + 1; // contatore globale scritture
+
+        /* trigger rollback globale quando raggiungiamo 500 store */
+        mvmm_maybe_trigger_rollback(wc);
+
         uint64_t ts = wc / (uint64_t)ROTATE_EVERY; // era attuale
 
          // 1 sola copy on write per pagina per ts
@@ -275,7 +286,8 @@ static inline uintptr_t mvmm_translate_ea(mvmm_region *r,
 
                 void *dst = mvmm_alloc_page();
                 if (dst) {
-                    void *src = ps->slots[cur];
+                    void *src = atomic_load_explicit(&ps->slots[cur], memory_order_acquire);
+                    if (!src) return ea;
 
                     // Copia la versione corrente nello slot nuovo
                     memcpy(dst, src, MVMM_PAGE_SIZE);
@@ -338,4 +350,72 @@ char buffer[1024];
 void user_defined(instruction_record *actual_instruction, patch *actual_patch) {
     (void)actual_instruction;
     (void)actual_patch;
+}
+
+// rollback
+
+/* Rollback della regione r al timestamp target_ts.
+ * Dopo questa chiamata, le load leggono dalla versione scelta.
+ * La prima store aprirà una nuova versione (COW) sopra quella.
+ *
+ * non libera nulla, non gestisce munmap, non sincronizza con “in flight” patch.
+ */
+static void mvmm_region_rollback(mvmm_region *r, uint64_t target_ts) {
+    if (!r) return;
+
+    for (size_t page_idx = 0; page_idx < r->npages; page_idx++) {
+        mvmm_page_state *ps = &r->pages[page_idx];
+
+        uint32_t best = 0;
+        uint64_t best_ts = atomic_load_explicit(&ps->slot_ts[0], memory_order_acquire);
+
+        /* Cerca la miglior versione <= target_ts */
+        for (uint32_t s = 1; s < MVMM_MAX_VERSIONS; s++) {
+            uint64_t ts = atomic_load_explicit(&ps->slot_ts[s], memory_order_acquire);
+            if (ts == UINT64_MAX) continue;          /* slot vuoto */
+            if (ts > target_ts) continue;            /* “troppo nuovo” */
+            if (ts >= best_ts) {                     /* più recente tra quelli ok */
+                /* opzionale: controlla che la pagina esista */
+                void *p = atomic_load_explicit(&ps->slots[s], memory_order_acquire);
+                if (p) {
+                    best = s;
+                    best_ts = ts;
+                }
+            }
+        }
+
+        /* Pubblica la scelta */
+        atomic_store_explicit(&ps->cur_slot, best, memory_order_release);
+
+        /* Importante: forza il prossimo store a fare COW anche se target_ts coincide */
+        atomic_store_explicit(&ps->last_ts_seen, UINT64_MAX, memory_order_release);
+    }
+}
+
+static void mvmm_rollback_all(uint64_t target_ts) {
+    pthread_rwlock_rdlock(&g_regions_lock);
+    for (mvmm_region_node *n = g_regions_head; n; n = n->next) {
+        mvmm_region_rollback(&n->r, target_ts);
+    }
+    pthread_rwlock_unlock(&g_regions_lock);
+
+    fprintf(stderr, "[mvmm] rollback_all target_ts=%lu\n", (unsigned long)target_ts);
+}
+
+static inline void mvmm_maybe_trigger_rollback(uint64_t wc_now) {
+    if (wc_now != MVMM_ROLLBACK_AT_WRITES) return;
+
+    int expected = 0;
+    if (!atomic_compare_exchange_strong_explicit(&g_rollback_done, &expected, 1,
+                                                memory_order_acq_rel, memory_order_acquire)) {
+        return; // qualcun altro lo ha già fatto
+    }
+
+    /* target_ts: scegliamo lo "ts corrente" al momento della 500-esima write */
+    uint64_t cur_ts = wc_now / (uint64_t)ROTATE_EVERY;
+    uint64_t target_ts = (cur_ts > 0) ? (cur_ts - 1) : 0;
+
+    mvmm_rollback_all(target_ts);
+    fprintf(stderr, "[mvmm] rollback TRIGGERED at wc=%lu target_ts=%lu\n",
+            (unsigned long)wc_now, (unsigned long)target_ts);
 }
