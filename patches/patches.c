@@ -29,7 +29,7 @@ typedef struct {
     _Atomic uint64_t last_ts_seen;                 // ultimo ts per cui ho cambiato versione (per farlo una sola volta)
     _Atomic uint32_t cur_slot;                     // slot corrente per load/store
     _Atomic uint64_t slot_ts[MVMM_MAX_VERSIONS];   // timestamp di ogni slot
-    void    *slots[MVMM_MAX_VERSIONS];             // ptr pagina per ogni slot
+    _Atomic(void*)   slots[MVMM_MAX_VERSIONS];            // ptr pagina per ogni slot
 } mvmm_page_state;
 
 /*
@@ -108,7 +108,7 @@ static inline mvmm_region *mvmm_find_region(uintptr_t ea) {
 static inline void *mvmm_cur_page_ptr(const mvmm_region *r, size_t page_idx) {
     mvmm_page_state *ps = &r->pages[page_idx];
     uint32_t slot = atomic_load_explicit(&ps->cur_slot, memory_order_acquire); // legge slot in modo atomico. memory_order_acquire garantisce che veda tutti gli eventi passati.
-    return ps->slots[slot];
+    return atomic_load_explicit(&ps->slots[slot], memory_order_acquire);
 }
 
 /*
@@ -270,7 +270,8 @@ static inline uintptr_t mvmm_translate_ea(mvmm_region *r,
         if (seen != ts) { // nuova era
             if (atomic_compare_exchange_strong_explicit(&ps->last_ts_seen, &seen, ts, memory_order_acq_rel, memory_order_acquire)) { // lock free winner: solo il primo entra e aggiorna era
                 uint32_t cur  = atomic_load_explicit(&ps->cur_slot, memory_order_acquire);
-                uint32_t next = (cur + 1u) % MVMM_MAX_VERSIONS;
+                uint32_t next = (cur + 1u);
+                if (next >= MVMM_MAX_VERSIONS) next = 1; // non usare 0 (mantengo la baseline cosí)
 
                 void *dst = mvmm_alloc_page();
                 if (dst) {
@@ -286,7 +287,7 @@ static inline uintptr_t mvmm_translate_ea(mvmm_region *r,
                      *
                      * TODO free della vecchia pagina quando nessuno la usa più
                      */
-                    ps->slots[next] = dst;
+                    atomic_store_explicit(&ps->slots[next], dst, memory_order_release);
                     atomic_store_explicit(&ps->slot_ts[next], ts, memory_order_release);
                     atomic_store_explicit(&ps->cur_slot, next, memory_order_release);
 
