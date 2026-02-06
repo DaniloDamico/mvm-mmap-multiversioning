@@ -436,6 +436,16 @@ static void mvmm_region_rollback(mvmm_region *r, uint64_t target_ts)
         // forza il prossimo store a fare copy on write
         atomic_store_explicit(&ps->last_ts_seen, UINT64_MAX, memory_order_release);
 
+        // Invalida tutte le versioni future
+        for (uint32_t s = 1; s < MVMM_MAX_VERSIONS; s++) {
+            uint64_t ts = atomic_load_explicit(&ps->slot_ts[s], memory_order_acquire);
+            if (ts != UINT64_MAX && ts > target_ts) {
+                atomic_store_explicit(&ps->slot_ts[s], UINT64_MAX, memory_order_release);
+                atomic_store_explicit(&ps->slots[s], NULL, memory_order_release);
+            }
+        }
+
+
         fprintf(stderr, "[mvmm] rollback page=%zu choose slot=%u best_ts=%lu\n",
         page_idx, best, (unsigned long)best_ts);
     }

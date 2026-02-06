@@ -44,13 +44,19 @@ Disassembly of section .note.gnu.build-id:
  39a:	00 00                	add    %al,(%rax)
  39c:	47                   	rex.RXB
  39d:	4e 55                	rex.WRX push %rbp
- 39f:	00 c5                	add    %al,%ch
- 3a1:	a7                   	cmpsl  %es:(%rdi),%ds:(%rsi)
- 3a2:	4c                   	rex.WR
- 3a3:	41 02 54 0a 20       	add    0x20(%r10,%rcx,1),%dl
- 3a8:	96                   	xchg   %eax,%esi
- 3a9:	78 52                	js     3fd <__abi_tag+0x49>
- 3ab:	a2 14 21 64 ad 31 a6 64 d7 	movabs %al,0xd764a631ad642114
+ 39f:	00 e9                	add    %ch,%cl
+ 3a1:	8a d5                	mov    %ch,%dl
+ 3a3:	37                   	(bad)
+ 3a4:	9a                   	(bad)
+ 3a5:	d3 de                	rcr    %cl,%esi
+ 3a7:	ad                   	lods   %ds:(%rsi),%eax
+ 3a8:	c4                   	(bad)
+ 3a9:	92                   	xchg   %eax,%edx
+ 3aa:	75 26                	jne    3d2 <__abi_tag+0x1e>
+ 3ac:	d7                   	xlat   %ds:(%rbx)
+ 3ad:	ba ff b5 a1 3a       	mov    $0x3aa1b5ff,%edx
+ 3b2:	35                   	.byte 0x35
+ 3b3:	78                   	.byte 0x78
 
 Disassembly of section .note.ABI-tag:
 
@@ -1210,7 +1216,7 @@ Disassembly of section .text:
    1012d:	ba 03 00 00 00       	mov    $0x3,%edx
    10132:	be 00 10 00 00       	mov    $0x1000,%esi
    10137:	bf 00 00 00 00       	mov    $0x0,%edi
-   1013c:	e8 4f 02 04 00       	call   50390 <__wrap_mmap>
+   1013c:	e8 9f 02 04 00       	call   503e0 <__wrap_mmap>
    10141:	48 89 45 f8          	mov    %rax,-0x8(%rbp)
    10145:	48 83 7d f8 00       	cmpq   $0x0,-0x8(%rbp)
    1014a:	75 45                	jne    10191 <function+0xa8>
@@ -7882,7 +7888,7 @@ Disassembly of section .text:
    2001e:	41 57                	push   %r15
    20020:	48 89 e6             	mov    %rsp,%rsi
    20023:	48 bf ff 00 00 00 00 00 00 00 	movabs $0xff,%rdi
-   2002d:	e8 4e 05 03 00       	call   50580 <the_patch>
+   2002d:	e8 9e 05 03 00       	call   505d0 <the_patch>
    20032:	41 5f                	pop    %r15
    20034:	41 5e                	pop    %r14
    20036:	41 5d                	pop    %r13
@@ -8003,7 +8009,7 @@ Disassembly of section .text:
    201fb:	c7 86 00 02 00 00 00 00 00 00 	movl   $0x0,0x200(%rsi)
    20205:	4c 01 e7             	add    %r12,%rdi
    20208:	49 81 c4 68 02 00 00 	add    $0x268,%r12
-   2020f:	e8 bc 06 03 00       	call   508d0 <user_defined>
+   2020f:	e8 0c 07 03 00       	call   50920 <user_defined>
    20214:	39 1d 8e 32 13 00    	cmp    %ebx,0x13328e(%rip)        # 1534a8 <target_instructions>
    2021a:	7f c4                	jg     201e0 <build_intermediate_representation+0x40>
    2021c:	48 8b 44 24 08       	mov    0x8(%rsp),%rax
@@ -8102,7 +8108,7 @@ Disassembly of section .text:
    20397:	41 0f 11 84 24 20 04 00 00 	movups %xmm0,0x420(%r12)
    203a0:	e8 8b 0d fe ff       	call   1130 <memcpy@plt>
    203a5:	49 8d 84 24 04 02 00 00 	lea    0x204(%r12),%rax
-   203ad:	48 8d 0d cc 01 03 00 	lea    0x301cc(%rip),%rcx        # 50580 <the_patch>
+   203ad:	48 8d 0d 1c 02 03 00 	lea    0x3021c(%rip),%rcx        # 505d0 <the_patch>
    203b4:	49 8d bc 24 56 02 00 00 	lea    0x256(%r12),%rdi
    203bc:	49 89 84 24 08 04 00 00 	mov    %rax,0x408(%r12)
    203c4:	f3 41 0f 6f 0e       	movdqu (%r14),%xmm1
@@ -9782,7 +9788,7 @@ Disassembly of section .text:
    220dc:	c7 86 00 02 00 00 00 00 00 00 	movl   $0x0,0x200(%rsi)
    220e6:	4c 01 ff             	add    %r15,%rdi
    220e9:	49 81 c7 68 02 00 00 	add    $0x268,%r15
-   220f0:	e8 db e7 02 00       	call   508d0 <user_defined>
+   220f0:	e8 2b e8 02 00       	call   50920 <user_defined>
    220f5:	44 3b 2d ac 13 13 00 	cmp    0x1313ac(%rip),%r13d        # 1534a8 <target_instructions>
    220fc:	7c c2                	jl     220c0 <__wrap_main+0xf0>
    220fe:	e8 dd e1 ff ff       	call   202e0 <build_patches>
@@ -27633,445 +27639,462 @@ Disassembly of section .text:
    5029e:	e8 9d fd ff ff       	call   50040 <mvmm_dump_state_locked>
    502a3:	4c 8b 2d 6e 46 10 00 	mov    0x10466e(%rip),%r13        # 154918 <g_regions_head>
    502aa:	4d 85 ed             	test   %r13,%r13
-   502ad:	0f 84 92 00 00 00    	je     50345 <mvmm_rollback_all.constprop.0+0xf5>
+   502ad:	0f 84 e0 00 00 00    	je     50393 <mvmm_rollback_all.constprop.0+0x143>
    502b3:	0f 1f 44 00 00       	nopl   0x0(%rax,%rax,1)
    502b8:	45 31 f6             	xor    %r14d,%r14d
    502bb:	45 31 e4             	xor    %r12d,%r12d
    502be:	49 83 7d 10 00       	cmpq   $0x0,0x10(%r13)
-   502c3:	74 73                	je     50338 <mvmm_rollback_all.constprop.0+0xe8>
-   502c5:	0f 1f 00             	nopl   (%rax)
-   502c8:	4b 8d 04 b6          	lea    (%r14,%r14,4),%rax
-   502cc:	45 31 c0             	xor    %r8d,%r8d
-   502cf:	49 8d 34 46          	lea    (%r14,%rax,2),%rsi
-   502d3:	b8 01 00 00 00       	mov    $0x1,%eax
-   502d8:	48 c1 e6 04          	shl    $0x4,%rsi
-   502dc:	49 03 75 18          	add    0x18(%r13),%rsi
-   502e0:	4c 8b 4e 10          	mov    0x10(%rsi),%r9
-   502e4:	48 8d 56 18          	lea    0x18(%rsi),%rdx
-   502e8:	0f 1f 84 00 00 00 00 00 	nopl   0x0(%rax,%rax,1)
-   502f0:	48 8b 0a             	mov    (%rdx),%rcx
-   502f3:	4c 09 c9             	or     %r9,%rcx
-   502f6:	4d 0f 44 cc          	cmove  %r12,%r9
-   502fa:	44 0f 44 c0          	cmove  %eax,%r8d
-   502fe:	83 c0 01             	add    $0x1,%eax
-   50301:	48 83 c2 08          	add    $0x8,%rdx
-   50305:	83 f8 0a             	cmp    $0xa,%eax
-   50308:	75 e6                	jne    502f0 <mvmm_rollback_all.constprop.0+0xa0>
-   5030a:	4c 89 f1             	mov    %r14,%rcx
-   5030d:	48 89 da             	mov    %rbx,%rdx
-   50310:	31 c0                	xor    %eax,%eax
-   50312:	44 89 46 08          	mov    %r8d,0x8(%rsi)
-   50316:	49 83 c6 01          	add    $0x1,%r14
-   5031a:	48 c7 06 ff ff ff ff 	movq   $0xffffffffffffffff,(%rsi)
-   50321:	be 02 00 00 00       	mov    $0x2,%esi
-   50326:	48 8b 3d 33 2d 00 00 	mov    0x2d33(%rip),%rdi        # 53060 <stderr@GLIBC_2.2.5>
-   5032d:	e8 be 0e fb ff       	call   11f0 <__fprintf_chk@plt>
-   50332:	4d 3b 75 10          	cmp    0x10(%r13),%r14
-   50336:	72 90                	jb     502c8 <mvmm_rollback_all.constprop.0+0x78>
-   50338:	4d 8b 6d 20          	mov    0x20(%r13),%r13
-   5033c:	4d 85 ed             	test   %r13,%r13
-   5033f:	0f 85 73 ff ff ff    	jne    502b8 <mvmm_rollback_all.constprop.0+0x68>
-   50345:	48 8b 3d 14 2d 00 00 	mov    0x2d14(%rip),%rdi        # 53060 <stderr@GLIBC_2.2.5>
-   5034c:	31 c9                	xor    %ecx,%ecx
-   5034e:	be 02 00 00 00       	mov    $0x2,%esi
-   50353:	31 c0                	xor    %eax,%eax
-   50355:	48 8d 15 0c 11 00 00 	lea    0x110c(%rip),%rdx        # 51468 <_IO_stdin_used+0x468>
-   5035c:	e8 8f 0e fb ff       	call   11f0 <__fprintf_chk@plt>
-   50361:	e8 da fc ff ff       	call   50040 <mvmm_dump_state_locked>
-   50366:	48 8b 44 24 08       	mov    0x8(%rsp),%rax
-   5036b:	64 48 2b 04 25 28 00 00 00 	sub    %fs:0x28,%rax
-   50374:	75 14                	jne    5038a <mvmm_rollback_all.constprop.0+0x13a>
-   50376:	48 83 c4 10          	add    $0x10,%rsp
-   5037a:	48 89 ef             	mov    %rbp,%rdi
-   5037d:	5b                   	pop    %rbx
-   5037e:	5d                   	pop    %rbp
-   5037f:	41 5c                	pop    %r12
-   50381:	41 5d                	pop    %r13
-   50383:	41 5e                	pop    %r14
-   50385:	e9 d6 0d fb ff       	jmp    1160 <pthread_rwlock_unlock@plt>
-   5038a:	e8 01 0d fb ff       	call   1090 <__stack_chk_fail@plt>
-   5038f:	90                   	nop
+   502c3:	0f 84 bd 00 00 00    	je     50386 <mvmm_rollback_all.constprop.0+0x136>
+   502c9:	0f 1f 80 00 00 00 00 	nopl   0x0(%rax)
+   502d0:	4b 8d 04 b6          	lea    (%r14,%r14,4),%rax
+   502d4:	49 8b 7d 18          	mov    0x18(%r13),%rdi
+   502d8:	45 31 c0             	xor    %r8d,%r8d
+   502db:	ba 01 00 00 00       	mov    $0x1,%edx
+   502e0:	49 8d 0c 46          	lea    (%r14,%rax,2),%rcx
+   502e4:	48 c1 e1 04          	shl    $0x4,%rcx
+   502e8:	48 01 cf             	add    %rcx,%rdi
+   502eb:	4c 8b 4f 10          	mov    0x10(%rdi),%r9
+   502ef:	48 8d 47 18          	lea    0x18(%rdi),%rax
+   502f3:	48 89 c1             	mov    %rax,%rcx
+   502f6:	66 2e 0f 1f 84 00 00 00 00 00 	cs nopw 0x0(%rax,%rax,1)
+   50300:	48 8b 31             	mov    (%rcx),%rsi
+   50303:	4c 09 ce             	or     %r9,%rsi
+   50306:	4d 0f 44 cc          	cmove  %r12,%r9
+   5030a:	44 0f 44 c2          	cmove  %edx,%r8d
+   5030e:	83 c2 01             	add    $0x1,%edx
+   50311:	48 83 c1 08          	add    $0x8,%rcx
+   50315:	83 fa 0a             	cmp    $0xa,%edx
+   50318:	75 e6                	jne    50300 <mvmm_rollback_all.constprop.0+0xb0>
+   5031a:	48 8d 4f 60          	lea    0x60(%rdi),%rcx
+   5031e:	44 89 47 08          	mov    %r8d,0x8(%rdi)
+   50322:	48 c7 07 ff ff ff ff 	movq   $0xffffffffffffffff,(%rdi)
+   50329:	eb 0e                	jmp    50339 <mvmm_rollback_all.constprop.0+0xe9>
+   5032b:	0f 1f 44 00 00       	nopl   0x0(%rax,%rax,1)
+   50330:	48 83 c0 08          	add    $0x8,%rax
+   50334:	48 39 c1             	cmp    %rax,%rcx
+   50337:	74 26                	je     5035f <mvmm_rollback_all.constprop.0+0x10f>
+   50339:	48 8b 10             	mov    (%rax),%rdx
+   5033c:	48 83 ea 01          	sub    $0x1,%rdx
+   50340:	48 83 fa fd          	cmp    $0xfffffffffffffffd,%rdx
+   50344:	77 ea                	ja     50330 <mvmm_rollback_all.constprop.0+0xe0>
+   50346:	48 83 c0 08          	add    $0x8,%rax
+   5034a:	48 c7 40 f8 ff ff ff ff 	movq   $0xffffffffffffffff,-0x8(%rax)
+   50352:	48 c7 40 48 00 00 00 00 	movq   $0x0,0x48(%rax)
+   5035a:	48 39 c1             	cmp    %rax,%rcx
+   5035d:	75 da                	jne    50339 <mvmm_rollback_all.constprop.0+0xe9>
+   5035f:	48 8b 3d fa 2c 00 00 	mov    0x2cfa(%rip),%rdi        # 53060 <stderr@GLIBC_2.2.5>
+   50366:	4c 89 f1             	mov    %r14,%rcx
+   50369:	48 89 da             	mov    %rbx,%rdx
+   5036c:	31 c0                	xor    %eax,%eax
+   5036e:	be 02 00 00 00       	mov    $0x2,%esi
+   50373:	49 83 c6 01          	add    $0x1,%r14
+   50377:	e8 74 0e fb ff       	call   11f0 <__fprintf_chk@plt>
+   5037c:	4d 3b 75 10          	cmp    0x10(%r13),%r14
+   50380:	0f 82 4a ff ff ff    	jb     502d0 <mvmm_rollback_all.constprop.0+0x80>
+   50386:	4d 8b 6d 20          	mov    0x20(%r13),%r13
+   5038a:	4d 85 ed             	test   %r13,%r13
+   5038d:	0f 85 25 ff ff ff    	jne    502b8 <mvmm_rollback_all.constprop.0+0x68>
+   50393:	48 8b 3d c6 2c 00 00 	mov    0x2cc6(%rip),%rdi        # 53060 <stderr@GLIBC_2.2.5>
+   5039a:	31 c9                	xor    %ecx,%ecx
+   5039c:	be 02 00 00 00       	mov    $0x2,%esi
+   503a1:	31 c0                	xor    %eax,%eax
+   503a3:	48 8d 15 be 10 00 00 	lea    0x10be(%rip),%rdx        # 51468 <_IO_stdin_used+0x468>
+   503aa:	e8 41 0e fb ff       	call   11f0 <__fprintf_chk@plt>
+   503af:	e8 8c fc ff ff       	call   50040 <mvmm_dump_state_locked>
+   503b4:	48 8b 44 24 08       	mov    0x8(%rsp),%rax
+   503b9:	64 48 2b 04 25 28 00 00 00 	sub    %fs:0x28,%rax
+   503c2:	75 14                	jne    503d8 <mvmm_rollback_all.constprop.0+0x188>
+   503c4:	48 83 c4 10          	add    $0x10,%rsp
+   503c8:	48 89 ef             	mov    %rbp,%rdi
+   503cb:	5b                   	pop    %rbx
+   503cc:	5d                   	pop    %rbp
+   503cd:	41 5c                	pop    %r12
+   503cf:	41 5d                	pop    %r13
+   503d1:	41 5e                	pop    %r14
+   503d3:	e9 88 0d fb ff       	jmp    1160 <pthread_rwlock_unlock@plt>
+   503d8:	e8 b3 0c fb ff       	call   1090 <__stack_chk_fail@plt>
+   503dd:	0f 1f 00             	nopl   (%rax)
 
-0000000000050390 <__wrap_mmap>:
-   50390:	f3 0f 1e fa          	endbr64
-   50394:	41 55                	push   %r13
-   50396:	41 54                	push   %r12
-   50398:	55                   	push   %rbp
-   50399:	53                   	push   %rbx
-   5039a:	48 89 f3             	mov    %rsi,%rbx
-   5039d:	48 83 ec 18          	sub    $0x18,%rsp
-   503a1:	64 48 8b 04 25 28 00 00 00 	mov    %fs:0x28,%rax
-   503aa:	48 89 44 24 08       	mov    %rax,0x8(%rsp)
-   503af:	31 c0                	xor    %eax,%eax
-   503b1:	e8 ea 0c fb ff       	call   10a0 <mmap@plt>
-   503b6:	48 89 c5             	mov    %rax,%rbp
-   503b9:	48 83 f8 ff          	cmp    $0xffffffffffffffff,%rax
-   503bd:	74 11                	je     503d0 <__wrap_mmap+0x40>
-   503bf:	48 8d 40 ff          	lea    -0x1(%rax),%rax
-   503c3:	48 83 f8 fd          	cmp    $0xfffffffffffffffd,%rax
-   503c7:	77 07                	ja     503d0 <__wrap_mmap+0x40>
-   503c9:	48 85 db             	test   %rbx,%rbx
-   503cc:	75 2a                	jne    503f8 <__wrap_mmap+0x68>
-   503ce:	66 90                	xchg   %ax,%ax
-   503d0:	48 8b 44 24 08       	mov    0x8(%rsp),%rax
-   503d5:	64 48 2b 04 25 28 00 00 00 	sub    %fs:0x28,%rax
-   503de:	0f 85 6d 01 00 00    	jne    50551 <__wrap_mmap+0x1c1>
-   503e4:	48 83 c4 18          	add    $0x18,%rsp
-   503e8:	48 89 e8             	mov    %rbp,%rax
-   503eb:	5b                   	pop    %rbx
-   503ec:	5d                   	pop    %rbp
-   503ed:	41 5c                	pop    %r12
-   503ef:	41 5d                	pop    %r13
-   503f1:	c3                   	ret
-   503f2:	66 0f 1f 44 00 00    	nopw   0x0(%rax,%rax,1)
-   503f8:	be 28 00 00 00       	mov    $0x28,%esi
-   503fd:	bf 01 00 00 00       	mov    $0x1,%edi
-   50402:	e8 e9 0c fb ff       	call   10f0 <calloc@plt>
-   50407:	49 89 c4             	mov    %rax,%r12
-   5040a:	48 85 c0             	test   %rax,%rax
-   5040d:	0f 84 1c 01 00 00    	je     5052f <__wrap_mmap+0x19f>
-   50413:	4c 8d ab ff 0f 00 00 	lea    0xfff(%rbx),%r13
-   5041a:	48 89 28             	mov    %rbp,(%rax)
-   5041d:	be b0 00 00 00       	mov    $0xb0,%esi
-   50422:	49 c1 ed 0c          	shr    $0xc,%r13
-   50426:	48 89 58 08          	mov    %rbx,0x8(%rax)
-   5042a:	4c 89 68 10          	mov    %r13,0x10(%rax)
-   5042e:	4c 89 ef             	mov    %r13,%rdi
-   50431:	e8 ba 0c fb ff       	call   10f0 <calloc@plt>
-   50436:	49 89 44 24 18       	mov    %rax,0x18(%r12)
-   5043b:	48 85 c0             	test   %rax,%rax
-   5043e:	0f 84 12 01 00 00    	je     50556 <__wrap_mmap+0x1c6>
-   50444:	45 31 c0             	xor    %r8d,%r8d
-   50447:	31 ff                	xor    %edi,%edi
-   50449:	48 c7 c1 ff ff ff ff 	mov    $0xffffffffffffffff,%rcx
-   50450:	45 31 c9             	xor    %r9d,%r9d
-   50453:	4d 85 ed             	test   %r13,%r13
-   50456:	74 78                	je     504d0 <__wrap_mmap+0x140>
-   50458:	0f 1f 84 00 00 00 00 00 	nopl   0x0(%rax,%rax,1)
-   50460:	4c 01 c0             	add    %r8,%rax
-   50463:	48 89 ce             	mov    %rcx,%rsi
-   50466:	48 87 30             	xchg   %rsi,(%rax)
-   50469:	44 89 ce             	mov    %r9d,%esi
-   5046c:	87 70 08             	xchg   %esi,0x8(%rax)
-   5046f:	48 89 fa             	mov    %rdi,%rdx
-   50472:	48 c1 e2 0c          	shl    $0xc,%rdx
-   50476:	49 03 14 24          	add    (%r12),%rdx
-   5047a:	48 89 50 60          	mov    %rdx,0x60(%rax)
-   5047e:	48 8d 50 68          	lea    0x68(%rax),%rdx
-   50482:	48 05 b0 00 00 00    	add    $0xb0,%rax
-   50488:	48 c7 80 60 ff ff ff 00 00 00 00 	movq   $0x0,-0xa0(%rax)
-   50493:	0f 1f 44 00 00       	nopl   0x0(%rax,%rax,1)
-   50498:	48 c7 02 00 00 00 00 	movq   $0x0,(%rdx)
-   5049f:	48 89 ce             	mov    %rcx,%rsi
-   504a2:	48 87 72 b0          	xchg   %rsi,-0x50(%rdx)
-   504a6:	48 83 c2 08          	add    $0x8,%rdx
-   504aa:	48 39 d0             	cmp    %rdx,%rax
-   504ad:	75 e9                	jne    50498 <__wrap_mmap+0x108>
-   504af:	48 83 c7 01          	add    $0x1,%rdi
-   504b3:	49 81 c0 b0 00 00 00 	add    $0xb0,%r8
-   504ba:	49 3b 7c 24 10       	cmp    0x10(%r12),%rdi
-   504bf:	73 0f                	jae    504d0 <__wrap_mmap+0x140>
-   504c1:	49 8b 44 24 18       	mov    0x18(%r12),%rax
-   504c6:	eb 98                	jmp    50460 <__wrap_mmap+0xd0>
-   504c8:	0f 1f 84 00 00 00 00 00 	nopl   0x0(%rax,%rax,1)
-   504d0:	4c 8d 2d 09 44 10 00 	lea    0x104409(%rip),%r13        # 1548e0 <g_regions_lock>
-   504d7:	4c 89 ef             	mov    %r13,%rdi
-   504da:	e8 81 0b fb ff       	call   1060 <pthread_rwlock_wrlock@plt>
-   504df:	48 8b 05 32 44 10 00 	mov    0x104432(%rip),%rax        # 154918 <g_regions_head>
-   504e6:	4c 89 ef             	mov    %r13,%rdi
-   504e9:	4c 89 25 28 44 10 00 	mov    %r12,0x104428(%rip)        # 154918 <g_regions_head>
-   504f0:	49 89 44 24 20       	mov    %rax,0x20(%r12)
-   504f5:	e8 66 0c fb ff       	call   1160 <pthread_rwlock_unlock@plt>
-   504fa:	48 83 ec 08          	sub    $0x8,%rsp
-   504fe:	4d 8b 4c 24 10       	mov    0x10(%r12),%r9
-   50503:	31 c0                	xor    %eax,%eax
-   50505:	68 00 10 00 00       	push   $0x1000
-   5050a:	49 89 d8             	mov    %rbx,%r8
-   5050d:	48 89 e9             	mov    %rbp,%rcx
-   50510:	be 02 00 00 00       	mov    $0x2,%esi
-   50515:	48 8b 3d 44 2b 00 00 	mov    0x2b44(%rip),%rdi        # 53060 <stderr@GLIBC_2.2.5>
-   5051c:	48 8d 15 9d 0f 00 00 	lea    0xf9d(%rip),%rdx        # 514c0 <_IO_stdin_used+0x4c0>
-   50523:	e8 c8 0c fb ff       	call   11f0 <__fprintf_chk@plt>
-   50528:	58                   	pop    %rax
-   50529:	5a                   	pop    %rdx
-   5052a:	e9 a1 fe ff ff       	jmp    503d0 <__wrap_mmap+0x40>
-   5052f:	48 8b 0d 2a 2b 00 00 	mov    0x2b2a(%rip),%rcx        # 53060 <stderr@GLIBC_2.2.5>
-   50536:	ba 20 00 00 00       	mov    $0x20,%edx
-   5053b:	be 01 00 00 00       	mov    $0x1,%esi
-   50540:	48 8d 3d 51 0f 00 00 	lea    0xf51(%rip),%rdi        # 51498 <_IO_stdin_used+0x498>
-   50547:	e8 94 0c fb ff       	call   11e0 <fwrite@plt>
-   5054c:	e8 ef 0a fb ff       	call   1040 <abort@plt>
-   50551:	e8 3a 0b fb ff       	call   1090 <__stack_chk_fail@plt>
-   50556:	48 8b 0d 03 2b 00 00 	mov    0x2b03(%rip),%rcx        # 53060 <stderr@GLIBC_2.2.5>
-   5055d:	ba 1a 00 00 00       	mov    $0x1a,%edx
-   50562:	be 01 00 00 00       	mov    $0x1,%esi
-   50567:	48 8d 3d c5 11 00 00 	lea    0x11c5(%rip),%rdi        # 51733 <_IO_stdin_used+0x733>
-   5056e:	e8 6d 0c fb ff       	call   11e0 <fwrite@plt>
-   50573:	4c 89 e7             	mov    %r12,%rdi
-   50576:	e8 b5 0a fb ff       	call   1030 <free@plt>
-   5057b:	e8 c0 0a fb ff       	call   1040 <abort@plt>
+00000000000503e0 <__wrap_mmap>:
+   503e0:	f3 0f 1e fa          	endbr64
+   503e4:	41 55                	push   %r13
+   503e6:	41 54                	push   %r12
+   503e8:	55                   	push   %rbp
+   503e9:	53                   	push   %rbx
+   503ea:	48 89 f3             	mov    %rsi,%rbx
+   503ed:	48 83 ec 18          	sub    $0x18,%rsp
+   503f1:	64 48 8b 04 25 28 00 00 00 	mov    %fs:0x28,%rax
+   503fa:	48 89 44 24 08       	mov    %rax,0x8(%rsp)
+   503ff:	31 c0                	xor    %eax,%eax
+   50401:	e8 9a 0c fb ff       	call   10a0 <mmap@plt>
+   50406:	48 89 c5             	mov    %rax,%rbp
+   50409:	48 83 f8 ff          	cmp    $0xffffffffffffffff,%rax
+   5040d:	74 11                	je     50420 <__wrap_mmap+0x40>
+   5040f:	48 8d 40 ff          	lea    -0x1(%rax),%rax
+   50413:	48 83 f8 fd          	cmp    $0xfffffffffffffffd,%rax
+   50417:	77 07                	ja     50420 <__wrap_mmap+0x40>
+   50419:	48 85 db             	test   %rbx,%rbx
+   5041c:	75 2a                	jne    50448 <__wrap_mmap+0x68>
+   5041e:	66 90                	xchg   %ax,%ax
+   50420:	48 8b 44 24 08       	mov    0x8(%rsp),%rax
+   50425:	64 48 2b 04 25 28 00 00 00 	sub    %fs:0x28,%rax
+   5042e:	0f 85 6d 01 00 00    	jne    505a1 <__wrap_mmap+0x1c1>
+   50434:	48 83 c4 18          	add    $0x18,%rsp
+   50438:	48 89 e8             	mov    %rbp,%rax
+   5043b:	5b                   	pop    %rbx
+   5043c:	5d                   	pop    %rbp
+   5043d:	41 5c                	pop    %r12
+   5043f:	41 5d                	pop    %r13
+   50441:	c3                   	ret
+   50442:	66 0f 1f 44 00 00    	nopw   0x0(%rax,%rax,1)
+   50448:	be 28 00 00 00       	mov    $0x28,%esi
+   5044d:	bf 01 00 00 00       	mov    $0x1,%edi
+   50452:	e8 99 0c fb ff       	call   10f0 <calloc@plt>
+   50457:	49 89 c4             	mov    %rax,%r12
+   5045a:	48 85 c0             	test   %rax,%rax
+   5045d:	0f 84 1c 01 00 00    	je     5057f <__wrap_mmap+0x19f>
+   50463:	4c 8d ab ff 0f 00 00 	lea    0xfff(%rbx),%r13
+   5046a:	48 89 28             	mov    %rbp,(%rax)
+   5046d:	be b0 00 00 00       	mov    $0xb0,%esi
+   50472:	49 c1 ed 0c          	shr    $0xc,%r13
+   50476:	48 89 58 08          	mov    %rbx,0x8(%rax)
+   5047a:	4c 89 68 10          	mov    %r13,0x10(%rax)
+   5047e:	4c 89 ef             	mov    %r13,%rdi
+   50481:	e8 6a 0c fb ff       	call   10f0 <calloc@plt>
+   50486:	49 89 44 24 18       	mov    %rax,0x18(%r12)
+   5048b:	48 85 c0             	test   %rax,%rax
+   5048e:	0f 84 12 01 00 00    	je     505a6 <__wrap_mmap+0x1c6>
+   50494:	45 31 c0             	xor    %r8d,%r8d
+   50497:	31 ff                	xor    %edi,%edi
+   50499:	48 c7 c1 ff ff ff ff 	mov    $0xffffffffffffffff,%rcx
+   504a0:	45 31 c9             	xor    %r9d,%r9d
+   504a3:	4d 85 ed             	test   %r13,%r13
+   504a6:	74 78                	je     50520 <__wrap_mmap+0x140>
+   504a8:	0f 1f 84 00 00 00 00 00 	nopl   0x0(%rax,%rax,1)
+   504b0:	4c 01 c0             	add    %r8,%rax
+   504b3:	48 89 ce             	mov    %rcx,%rsi
+   504b6:	48 87 30             	xchg   %rsi,(%rax)
+   504b9:	44 89 ce             	mov    %r9d,%esi
+   504bc:	87 70 08             	xchg   %esi,0x8(%rax)
+   504bf:	48 89 fa             	mov    %rdi,%rdx
+   504c2:	48 c1 e2 0c          	shl    $0xc,%rdx
+   504c6:	49 03 14 24          	add    (%r12),%rdx
+   504ca:	48 89 50 60          	mov    %rdx,0x60(%rax)
+   504ce:	48 8d 50 68          	lea    0x68(%rax),%rdx
+   504d2:	48 05 b0 00 00 00    	add    $0xb0,%rax
+   504d8:	48 c7 80 60 ff ff ff 00 00 00 00 	movq   $0x0,-0xa0(%rax)
+   504e3:	0f 1f 44 00 00       	nopl   0x0(%rax,%rax,1)
+   504e8:	48 c7 02 00 00 00 00 	movq   $0x0,(%rdx)
+   504ef:	48 89 ce             	mov    %rcx,%rsi
+   504f2:	48 87 72 b0          	xchg   %rsi,-0x50(%rdx)
+   504f6:	48 83 c2 08          	add    $0x8,%rdx
+   504fa:	48 39 d0             	cmp    %rdx,%rax
+   504fd:	75 e9                	jne    504e8 <__wrap_mmap+0x108>
+   504ff:	48 83 c7 01          	add    $0x1,%rdi
+   50503:	49 81 c0 b0 00 00 00 	add    $0xb0,%r8
+   5050a:	49 3b 7c 24 10       	cmp    0x10(%r12),%rdi
+   5050f:	73 0f                	jae    50520 <__wrap_mmap+0x140>
+   50511:	49 8b 44 24 18       	mov    0x18(%r12),%rax
+   50516:	eb 98                	jmp    504b0 <__wrap_mmap+0xd0>
+   50518:	0f 1f 84 00 00 00 00 00 	nopl   0x0(%rax,%rax,1)
+   50520:	4c 8d 2d b9 43 10 00 	lea    0x1043b9(%rip),%r13        # 1548e0 <g_regions_lock>
+   50527:	4c 89 ef             	mov    %r13,%rdi
+   5052a:	e8 31 0b fb ff       	call   1060 <pthread_rwlock_wrlock@plt>
+   5052f:	48 8b 05 e2 43 10 00 	mov    0x1043e2(%rip),%rax        # 154918 <g_regions_head>
+   50536:	4c 89 ef             	mov    %r13,%rdi
+   50539:	4c 89 25 d8 43 10 00 	mov    %r12,0x1043d8(%rip)        # 154918 <g_regions_head>
+   50540:	49 89 44 24 20       	mov    %rax,0x20(%r12)
+   50545:	e8 16 0c fb ff       	call   1160 <pthread_rwlock_unlock@plt>
+   5054a:	48 83 ec 08          	sub    $0x8,%rsp
+   5054e:	4d 8b 4c 24 10       	mov    0x10(%r12),%r9
+   50553:	31 c0                	xor    %eax,%eax
+   50555:	68 00 10 00 00       	push   $0x1000
+   5055a:	49 89 d8             	mov    %rbx,%r8
+   5055d:	48 89 e9             	mov    %rbp,%rcx
+   50560:	be 02 00 00 00       	mov    $0x2,%esi
+   50565:	48 8b 3d f4 2a 00 00 	mov    0x2af4(%rip),%rdi        # 53060 <stderr@GLIBC_2.2.5>
+   5056c:	48 8d 15 4d 0f 00 00 	lea    0xf4d(%rip),%rdx        # 514c0 <_IO_stdin_used+0x4c0>
+   50573:	e8 78 0c fb ff       	call   11f0 <__fprintf_chk@plt>
+   50578:	58                   	pop    %rax
+   50579:	5a                   	pop    %rdx
+   5057a:	e9 a1 fe ff ff       	jmp    50420 <__wrap_mmap+0x40>
+   5057f:	48 8b 0d da 2a 00 00 	mov    0x2ada(%rip),%rcx        # 53060 <stderr@GLIBC_2.2.5>
+   50586:	ba 20 00 00 00       	mov    $0x20,%edx
+   5058b:	be 01 00 00 00       	mov    $0x1,%esi
+   50590:	48 8d 3d 01 0f 00 00 	lea    0xf01(%rip),%rdi        # 51498 <_IO_stdin_used+0x498>
+   50597:	e8 44 0c fb ff       	call   11e0 <fwrite@plt>
+   5059c:	e8 9f 0a fb ff       	call   1040 <abort@plt>
+   505a1:	e8 ea 0a fb ff       	call   1090 <__stack_chk_fail@plt>
+   505a6:	48 8b 0d b3 2a 00 00 	mov    0x2ab3(%rip),%rcx        # 53060 <stderr@GLIBC_2.2.5>
+   505ad:	ba 1a 00 00 00       	mov    $0x1a,%edx
+   505b2:	be 01 00 00 00       	mov    $0x1,%esi
+   505b7:	48 8d 3d 75 11 00 00 	lea    0x1175(%rip),%rdi        # 51733 <_IO_stdin_used+0x733>
+   505be:	e8 1d 0c fb ff       	call   11e0 <fwrite@plt>
+   505c3:	4c 89 e7             	mov    %r12,%rdi
+   505c6:	e8 65 0a fb ff       	call   1030 <free@plt>
+   505cb:	e8 70 0a fb ff       	call   1040 <abort@plt>
 
-0000000000050580 <the_patch>:
-   50580:	f3 0f 1e fa          	endbr64
-   50584:	41 57                	push   %r15
-   50586:	41 56                	push   %r14
-   50588:	41 55                	push   %r13
-   5058a:	41 54                	push   %r12
-   5058c:	55                   	push   %rbp
-   5058d:	53                   	push   %rbx
-   5058e:	48 83 ec 48          	sub    $0x48,%rsp
-   50592:	64 48 8b 04 25 28 00 00 00 	mov    %fs:0x28,%rax
-   5059b:	48 89 44 24 38       	mov    %rax,0x38(%rsp)
-   505a0:	31 c0                	xor    %eax,%eax
-   505a2:	48 85 ff             	test   %rdi,%rdi
-   505a5:	74 51                	je     505f8 <the_patch+0x78>
-   505a7:	0f b6 47 30          	movzbl 0x30(%rdi),%eax
-   505ab:	48 89 fb             	mov    %rdi,%rbx
-   505ae:	49 89 f5             	mov    %rsi,%r13
-   505b1:	3c 73                	cmp    $0x73,%al
-   505b3:	74 04                	je     505b9 <the_patch+0x39>
-   505b5:	3c 6c                	cmp    $0x6c,%al
-   505b7:	75 3f                	jne    505f8 <the_patch+0x78>
-   505b9:	48 8b 6b 38          	mov    0x38(%rbx),%rbp
-   505bd:	48 85 ed             	test   %rbp,%rbp
-   505c0:	75 5e                	jne    50620 <the_patch+0xa0>
-   505c2:	48 8b ab 50 02 00 00 	mov    0x250(%rbx),%rbp
-   505c9:	48 85 ed             	test   %rbp,%rbp
-   505cc:	74 05                	je     505d3 <the_patch+0x53>
-   505ce:	49 8b 6c ed f8       	mov    -0x8(%r13,%rbp,8),%rbp
-   505d3:	48 8b 83 58 02 00 00 	mov    0x258(%rbx),%rax
-   505da:	48 85 c0             	test   %rax,%rax
-   505dd:	74 05                	je     505e4 <the_patch+0x64>
-   505df:	49 8b 44 c5 f8       	mov    -0x8(%r13,%rax,8),%rax
-   505e4:	48 0f af 83 60 02 00 00 	imul   0x260(%rbx),%rax
-   505ec:	48 03 ab 48 02 00 00 	add    0x248(%rbx),%rbp
-   505f3:	48 01 c5             	add    %rax,%rbp
-   505f6:	75 28                	jne    50620 <the_patch+0xa0>
-   505f8:	48 8b 44 24 38       	mov    0x38(%rsp),%rax
-   505fd:	64 48 2b 04 25 28 00 00 00 	sub    %fs:0x28,%rax
-   50606:	0f 85 b9 02 00 00    	jne    508c5 <the_patch+0x345>
-   5060c:	48 83 c4 48          	add    $0x48,%rsp
-   50610:	5b                   	pop    %rbx
-   50611:	5d                   	pop    %rbp
-   50612:	41 5c                	pop    %r12
-   50614:	41 5d                	pop    %r13
-   50616:	41 5e                	pop    %r14
-   50618:	41 5f                	pop    %r15
-   5061a:	c3                   	ret
-   5061b:	0f 1f 44 00 00       	nopl   0x0(%rax,%rax,1)
-   50620:	4c 8d 35 b9 42 10 00 	lea    0x1042b9(%rip),%r14        # 1548e0 <g_regions_lock>
-   50627:	4c 89 f7             	mov    %r14,%rdi
-   5062a:	e8 a1 0a fb ff       	call   10d0 <pthread_rwlock_rdlock@plt>
-   5062f:	4c 8b 25 e2 42 10 00 	mov    0x1042e2(%rip),%r12        # 154918 <g_regions_head>
-   50636:	4d 85 e4             	test   %r12,%r12
-   50639:	0f 84 47 02 00 00    	je     50886 <the_patch+0x306>
-   5063f:	49 8b 04 24          	mov    (%r12),%rax
-   50643:	48 39 c5             	cmp    %rax,%rbp
-   50646:	0f 82 2c 02 00 00    	jb     50878 <the_patch+0x2f8>
-   5064c:	49 03 44 24 08       	add    0x8(%r12),%rax
-   50651:	48 39 c5             	cmp    %rax,%rbp
-   50654:	0f 83 1e 02 00 00    	jae    50878 <the_patch+0x2f8>
-   5065a:	49 89 ef             	mov    %rbp,%r15
-   5065d:	4c 89 f7             	mov    %r14,%rdi
-   50660:	e8 fb 0a fb ff       	call   1160 <pthread_rwlock_unlock@plt>
-   50665:	49 81 e7 00 f0 ff ff 	and    $0xfffffffffffff000,%r15
-   5066c:	4d 89 fe             	mov    %r15,%r14
-   5066f:	4d 2b 34 24          	sub    (%r12),%r14
-   50673:	49 c1 ee 0c          	shr    $0xc,%r14
-   50677:	4d 3b 74 24 10       	cmp    0x10(%r12),%r14
-   5067c:	0f 83 2e 02 00 00    	jae    508b0 <the_patch+0x330>
-   50682:	4b 8d 04 b6          	lea    (%r14,%r14,4),%rax
-   50686:	4d 8b 4c 24 18       	mov    0x18(%r12),%r9
-   5068b:	4d 8d 14 46          	lea    (%r14,%rax,2),%r10
-   5068f:	49 c1 e2 04          	shl    $0x4,%r10
-   50693:	4d 01 d1             	add    %r10,%r9
-   50696:	80 7b 30 73          	cmpb   $0x73,0x30(%rbx)
-   5069a:	0f 85 80 01 00 00    	jne    50820 <the_patch+0x2a0>
-   506a0:	41 bb 01 00 00 00    	mov    $0x1,%r11d
-   506a6:	f0 4c 0f c1 1d 71 42 10 00 	lock xadd %r11,0x104271(%rip)        # 154920 <g_write_counter>
-   506af:	49 83 c3 01          	add    $0x1,%r11
-   506b3:	49 83 fb 05          	cmp    $0x5,%r11
-   506b7:	75 54                	jne    5070d <the_patch+0x18d>
-   506b9:	31 c0                	xor    %eax,%eax
-   506bb:	ba 01 00 00 00       	mov    $0x1,%edx
-   506c0:	f0 0f b1 15 60 42 10 00 	lock cmpxchg %edx,0x104260(%rip)        # 154928 <g_rollback_done>
-   506c8:	75 43                	jne    5070d <the_patch+0x18d>
-   506ca:	4c 89 54 24 10       	mov    %r10,0x10(%rsp)
-   506cf:	4c 89 5c 24 08       	mov    %r11,0x8(%rsp)
-   506d4:	4c 89 0c 24          	mov    %r9,(%rsp)
-   506d8:	e8 73 fb ff ff       	call   50250 <mvmm_rollback_all.constprop.0>
-   506dd:	45 31 c0             	xor    %r8d,%r8d
-   506e0:	b9 05 00 00 00       	mov    $0x5,%ecx
-   506e5:	31 c0                	xor    %eax,%eax
-   506e7:	48 8b 3d 72 29 00 00 	mov    0x2972(%rip),%rdi        # 53060 <stderr@GLIBC_2.2.5>
-   506ee:	48 8d 15 13 0e 00 00 	lea    0xe13(%rip),%rdx        # 51508 <_IO_stdin_used+0x508>
-   506f5:	be 02 00 00 00       	mov    $0x2,%esi
-   506fa:	e8 f1 0a fb ff       	call   11f0 <__fprintf_chk@plt>
-   506ff:	4c 8b 54 24 10       	mov    0x10(%rsp),%r10
-   50704:	4c 8b 5c 24 08       	mov    0x8(%rsp),%r11
-   50709:	4c 8b 0c 24          	mov    (%rsp),%r9
-   5070d:	49 8b 01             	mov    (%r9),%rax
-   50710:	49 d1 eb             	shr    $1,%r11
-   50713:	49 39 c3             	cmp    %rax,%r11
-   50716:	0f 84 9c 01 00 00    	je     508b8 <the_patch+0x338>
-   5071c:	f0 4d 0f b1 19       	lock cmpxchg %r11,(%r9)
-   50721:	0f 85 91 01 00 00    	jne    508b8 <the_patch+0x338>
-   50727:	49 8d 41 08          	lea    0x8(%r9),%rax
-   5072b:	4c 89 54 24 20       	mov    %r10,0x20(%rsp)
-   50730:	48 8d 7c 24 30       	lea    0x30(%rsp),%rdi
-   50735:	ba 00 10 00 00       	mov    $0x1000,%edx
-   5073a:	4c 89 5c 24 18       	mov    %r11,0x18(%rsp)
-   5073f:	be 00 10 00 00       	mov    $0x1000,%esi
-   50744:	48 89 44 24 28       	mov    %rax,0x28(%rsp)
-   50749:	41 8b 49 08          	mov    0x8(%r9),%ecx
-   5074d:	b8 01 00 00 00       	mov    $0x1,%eax
-   50752:	4c 89 4c 24 10       	mov    %r9,0x10(%rsp)
-   50757:	44 8d 41 01          	lea    0x1(%rcx),%r8d
-   5075b:	41 83 f8 0a          	cmp    $0xa,%r8d
-   5075f:	44 0f 43 c0          	cmovae %eax,%r8d
-   50763:	89 4c 24 08          	mov    %ecx,0x8(%rsp)
-   50767:	44 89 04 24          	mov    %r8d,(%rsp)
-   5076b:	e8 90 0a fb ff       	call   1200 <posix_memalign@plt>
-   50770:	44 8b 04 24          	mov    (%rsp),%r8d
-   50774:	8b 4c 24 08          	mov    0x8(%rsp),%ecx
-   50778:	85 c0                	test   %eax,%eax
-   5077a:	4c 8b 4c 24 10       	mov    0x10(%rsp),%r9
-   5077f:	4c 8b 5c 24 18       	mov    0x18(%rsp),%r11
-   50784:	4c 8b 54 24 20       	mov    0x20(%rsp),%r10
-   50789:	0f 85 29 01 00 00    	jne    508b8 <the_patch+0x338>
-   5078f:	48 8b 54 24 30       	mov    0x30(%rsp),%rdx
-   50794:	48 85 d2             	test   %rdx,%rdx
-   50797:	0f 84 1b 01 00 00    	je     508b8 <the_patch+0x338>
-   5079d:	89 c8                	mov    %ecx,%eax
-   5079f:	4c 89 14 24          	mov    %r10,(%rsp)
-   507a3:	48 83 c0 0c          	add    $0xc,%rax
-   507a7:	49 8b 34 c1          	mov    (%r9,%rax,8),%rsi
-   507ab:	48 85 f6             	test   %rsi,%rsi
-   507ae:	0f 84 fc 00 00 00    	je     508b0 <the_patch+0x330>
-   507b4:	48 89 d7             	mov    %rdx,%rdi
-   507b7:	b9 00 02 00 00       	mov    $0x200,%ecx
-   507bc:	41 8d 40 0c          	lea    0xc(%r8),%eax
-   507c0:	48 83 ec 08          	sub    $0x8,%rsp
-   507c4:	f3 48 a5             	rep movsq %ds:(%rsi),%es:(%rdi)
-   507c7:	48 8d 0c c5 00 00 00 00 	lea    0x0(,%rax,8),%rcx
-   507cf:	be 02 00 00 00       	mov    $0x2,%esi
-   507d4:	49 89 14 c1          	mov    %rdx,(%r9,%rax,8)
-   507d8:	48 8d 15 61 0d 00 00 	lea    0xd61(%rip),%rdx        # 51540 <_IO_stdin_used+0x540>
-   507df:	4d 89 5c 09 b0       	mov    %r11,-0x50(%r9,%rcx,1)
-   507e4:	4d 89 f1             	mov    %r14,%r9
-   507e7:	4c 89 d9             	mov    %r11,%rcx
-   507ea:	48 8b 44 24 30       	mov    0x30(%rsp),%rax
-   507ef:	44 89 00             	mov    %r8d,(%rax)
-   507f2:	49 8b 04 24          	mov    (%r12),%rax
-   507f6:	48 8b 3d 63 28 00 00 	mov    0x2863(%rip),%rdi        # 53060 <stderr@GLIBC_2.2.5>
-   507fd:	41 50                	push   %r8
-   507ff:	49 89 c0             	mov    %rax,%r8
-   50802:	31 c0                	xor    %eax,%eax
-   50804:	e8 e7 09 fb ff       	call   11f0 <__fprintf_chk@plt>
-   50809:	4c 8b 54 24 10       	mov    0x10(%rsp),%r10
-   5080e:	4d 03 54 24 18       	add    0x18(%r12),%r10
-   50813:	58                   	pop    %rax
-   50814:	4d 89 d1             	mov    %r10,%r9
-   50817:	5a                   	pop    %rdx
-   50818:	0f 1f 84 00 00 00 00 00 	nopl   0x0(%rax,%rax,1)
-   50820:	41 8b 41 08          	mov    0x8(%r9),%eax
-   50824:	48 89 ea             	mov    %rbp,%rdx
-   50827:	4c 29 fa             	sub    %r15,%rdx
-   5082a:	48 83 c0 0c          	add    $0xc,%rax
-   5082e:	49 8b 04 c1          	mov    (%r9,%rax,8),%rax
-   50832:	48 85 c0             	test   %rax,%rax
-   50835:	74 79                	je     508b0 <the_patch+0x330>
-   50837:	48 01 d0             	add    %rdx,%rax
-   5083a:	80 7b 31 79          	cmpb   $0x79,0x31(%rbx)
-   5083e:	0f 84 b4 fd ff ff    	je     505f8 <the_patch+0x78>
-   50844:	48 8b 93 50 02 00 00 	mov    0x250(%rbx),%rdx
-   5084b:	48 85 d2             	test   %rdx,%rdx
-   5084e:	0f 84 a4 fd ff ff    	je     505f8 <the_patch+0x78>
-   50854:	48 83 bb 58 02 00 00 00 	cmpq   $0x0,0x258(%rbx)
-   5085c:	0f 85 96 fd ff ff    	jne    505f8 <the_patch+0x78>
-   50862:	48 29 e8             	sub    %rbp,%rax
-   50865:	0f 84 8d fd ff ff    	je     505f8 <the_patch+0x78>
-   5086b:	49 01 44 d5 f8       	add    %rax,-0x8(%r13,%rdx,8)
-   50870:	e9 83 fd ff ff       	jmp    505f8 <the_patch+0x78>
-   50875:	0f 1f 00             	nopl   (%rax)
-   50878:	4d 8b 64 24 20       	mov    0x20(%r12),%r12
-   5087d:	4d 85 e4             	test   %r12,%r12
-   50880:	0f 85 b9 fd ff ff    	jne    5063f <the_patch+0xbf>
-   50886:	48 8b 44 24 38       	mov    0x38(%rsp),%rax
-   5088b:	64 48 2b 04 25 28 00 00 00 	sub    %fs:0x28,%rax
-   50894:	75 2f                	jne    508c5 <the_patch+0x345>
-   50896:	48 83 c4 48          	add    $0x48,%rsp
-   5089a:	4c 89 f7             	mov    %r14,%rdi
-   5089d:	5b                   	pop    %rbx
-   5089e:	5d                   	pop    %rbp
-   5089f:	41 5c                	pop    %r12
-   508a1:	41 5d                	pop    %r13
-   508a3:	41 5e                	pop    %r14
-   508a5:	41 5f                	pop    %r15
-   508a7:	e9 b4 08 fb ff       	jmp    1160 <pthread_rwlock_unlock@plt>
-   508ac:	0f 1f 40 00          	nopl   0x0(%rax)
-   508b0:	48 89 e8             	mov    %rbp,%rax
-   508b3:	eb 85                	jmp    5083a <the_patch+0x2ba>
-   508b5:	0f 1f 00             	nopl   (%rax)
-   508b8:	4d 03 54 24 18       	add    0x18(%r12),%r10
-   508bd:	4d 89 d1             	mov    %r10,%r9
-   508c0:	e9 5b ff ff ff       	jmp    50820 <the_patch+0x2a0>
-   508c5:	e8 c6 07 fb ff       	call   1090 <__stack_chk_fail@plt>
-   508ca:	66 0f 1f 44 00 00    	nopw   0x0(%rax,%rax,1)
+00000000000505d0 <the_patch>:
+   505d0:	f3 0f 1e fa          	endbr64
+   505d4:	41 57                	push   %r15
+   505d6:	41 56                	push   %r14
+   505d8:	41 55                	push   %r13
+   505da:	41 54                	push   %r12
+   505dc:	55                   	push   %rbp
+   505dd:	53                   	push   %rbx
+   505de:	48 83 ec 48          	sub    $0x48,%rsp
+   505e2:	64 48 8b 04 25 28 00 00 00 	mov    %fs:0x28,%rax
+   505eb:	48 89 44 24 38       	mov    %rax,0x38(%rsp)
+   505f0:	31 c0                	xor    %eax,%eax
+   505f2:	48 85 ff             	test   %rdi,%rdi
+   505f5:	74 51                	je     50648 <the_patch+0x78>
+   505f7:	0f b6 47 30          	movzbl 0x30(%rdi),%eax
+   505fb:	48 89 fb             	mov    %rdi,%rbx
+   505fe:	49 89 f5             	mov    %rsi,%r13
+   50601:	3c 73                	cmp    $0x73,%al
+   50603:	74 04                	je     50609 <the_patch+0x39>
+   50605:	3c 6c                	cmp    $0x6c,%al
+   50607:	75 3f                	jne    50648 <the_patch+0x78>
+   50609:	48 8b 6b 38          	mov    0x38(%rbx),%rbp
+   5060d:	48 85 ed             	test   %rbp,%rbp
+   50610:	75 5e                	jne    50670 <the_patch+0xa0>
+   50612:	48 8b ab 50 02 00 00 	mov    0x250(%rbx),%rbp
+   50619:	48 85 ed             	test   %rbp,%rbp
+   5061c:	74 05                	je     50623 <the_patch+0x53>
+   5061e:	49 8b 6c ed f8       	mov    -0x8(%r13,%rbp,8),%rbp
+   50623:	48 8b 83 58 02 00 00 	mov    0x258(%rbx),%rax
+   5062a:	48 85 c0             	test   %rax,%rax
+   5062d:	74 05                	je     50634 <the_patch+0x64>
+   5062f:	49 8b 44 c5 f8       	mov    -0x8(%r13,%rax,8),%rax
+   50634:	48 0f af 83 60 02 00 00 	imul   0x260(%rbx),%rax
+   5063c:	48 03 ab 48 02 00 00 	add    0x248(%rbx),%rbp
+   50643:	48 01 c5             	add    %rax,%rbp
+   50646:	75 28                	jne    50670 <the_patch+0xa0>
+   50648:	48 8b 44 24 38       	mov    0x38(%rsp),%rax
+   5064d:	64 48 2b 04 25 28 00 00 00 	sub    %fs:0x28,%rax
+   50656:	0f 85 b9 02 00 00    	jne    50915 <the_patch+0x345>
+   5065c:	48 83 c4 48          	add    $0x48,%rsp
+   50660:	5b                   	pop    %rbx
+   50661:	5d                   	pop    %rbp
+   50662:	41 5c                	pop    %r12
+   50664:	41 5d                	pop    %r13
+   50666:	41 5e                	pop    %r14
+   50668:	41 5f                	pop    %r15
+   5066a:	c3                   	ret
+   5066b:	0f 1f 44 00 00       	nopl   0x0(%rax,%rax,1)
+   50670:	4c 8d 35 69 42 10 00 	lea    0x104269(%rip),%r14        # 1548e0 <g_regions_lock>
+   50677:	4c 89 f7             	mov    %r14,%rdi
+   5067a:	e8 51 0a fb ff       	call   10d0 <pthread_rwlock_rdlock@plt>
+   5067f:	4c 8b 25 92 42 10 00 	mov    0x104292(%rip),%r12        # 154918 <g_regions_head>
+   50686:	4d 85 e4             	test   %r12,%r12
+   50689:	0f 84 47 02 00 00    	je     508d6 <the_patch+0x306>
+   5068f:	49 8b 04 24          	mov    (%r12),%rax
+   50693:	48 39 c5             	cmp    %rax,%rbp
+   50696:	0f 82 2c 02 00 00    	jb     508c8 <the_patch+0x2f8>
+   5069c:	49 03 44 24 08       	add    0x8(%r12),%rax
+   506a1:	48 39 c5             	cmp    %rax,%rbp
+   506a4:	0f 83 1e 02 00 00    	jae    508c8 <the_patch+0x2f8>
+   506aa:	49 89 ef             	mov    %rbp,%r15
+   506ad:	4c 89 f7             	mov    %r14,%rdi
+   506b0:	e8 ab 0a fb ff       	call   1160 <pthread_rwlock_unlock@plt>
+   506b5:	49 81 e7 00 f0 ff ff 	and    $0xfffffffffffff000,%r15
+   506bc:	4d 89 fe             	mov    %r15,%r14
+   506bf:	4d 2b 34 24          	sub    (%r12),%r14
+   506c3:	49 c1 ee 0c          	shr    $0xc,%r14
+   506c7:	4d 3b 74 24 10       	cmp    0x10(%r12),%r14
+   506cc:	0f 83 2e 02 00 00    	jae    50900 <the_patch+0x330>
+   506d2:	4b 8d 04 b6          	lea    (%r14,%r14,4),%rax
+   506d6:	4d 8b 4c 24 18       	mov    0x18(%r12),%r9
+   506db:	4d 8d 14 46          	lea    (%r14,%rax,2),%r10
+   506df:	49 c1 e2 04          	shl    $0x4,%r10
+   506e3:	4d 01 d1             	add    %r10,%r9
+   506e6:	80 7b 30 73          	cmpb   $0x73,0x30(%rbx)
+   506ea:	0f 85 80 01 00 00    	jne    50870 <the_patch+0x2a0>
+   506f0:	41 bb 01 00 00 00    	mov    $0x1,%r11d
+   506f6:	f0 4c 0f c1 1d 21 42 10 00 	lock xadd %r11,0x104221(%rip)        # 154920 <g_write_counter>
+   506ff:	49 83 c3 01          	add    $0x1,%r11
+   50703:	49 83 fb 05          	cmp    $0x5,%r11
+   50707:	75 54                	jne    5075d <the_patch+0x18d>
+   50709:	31 c0                	xor    %eax,%eax
+   5070b:	ba 01 00 00 00       	mov    $0x1,%edx
+   50710:	f0 0f b1 15 10 42 10 00 	lock cmpxchg %edx,0x104210(%rip)        # 154928 <g_rollback_done>
+   50718:	75 43                	jne    5075d <the_patch+0x18d>
+   5071a:	4c 89 54 24 10       	mov    %r10,0x10(%rsp)
+   5071f:	4c 89 5c 24 08       	mov    %r11,0x8(%rsp)
+   50724:	4c 89 0c 24          	mov    %r9,(%rsp)
+   50728:	e8 23 fb ff ff       	call   50250 <mvmm_rollback_all.constprop.0>
+   5072d:	45 31 c0             	xor    %r8d,%r8d
+   50730:	b9 05 00 00 00       	mov    $0x5,%ecx
+   50735:	31 c0                	xor    %eax,%eax
+   50737:	48 8b 3d 22 29 00 00 	mov    0x2922(%rip),%rdi        # 53060 <stderr@GLIBC_2.2.5>
+   5073e:	48 8d 15 c3 0d 00 00 	lea    0xdc3(%rip),%rdx        # 51508 <_IO_stdin_used+0x508>
+   50745:	be 02 00 00 00       	mov    $0x2,%esi
+   5074a:	e8 a1 0a fb ff       	call   11f0 <__fprintf_chk@plt>
+   5074f:	4c 8b 54 24 10       	mov    0x10(%rsp),%r10
+   50754:	4c 8b 5c 24 08       	mov    0x8(%rsp),%r11
+   50759:	4c 8b 0c 24          	mov    (%rsp),%r9
+   5075d:	49 8b 01             	mov    (%r9),%rax
+   50760:	49 d1 eb             	shr    $1,%r11
+   50763:	49 39 c3             	cmp    %rax,%r11
+   50766:	0f 84 9c 01 00 00    	je     50908 <the_patch+0x338>
+   5076c:	f0 4d 0f b1 19       	lock cmpxchg %r11,(%r9)
+   50771:	0f 85 91 01 00 00    	jne    50908 <the_patch+0x338>
+   50777:	49 8d 41 08          	lea    0x8(%r9),%rax
+   5077b:	4c 89 54 24 20       	mov    %r10,0x20(%rsp)
+   50780:	48 8d 7c 24 30       	lea    0x30(%rsp),%rdi
+   50785:	ba 00 10 00 00       	mov    $0x1000,%edx
+   5078a:	4c 89 5c 24 18       	mov    %r11,0x18(%rsp)
+   5078f:	be 00 10 00 00       	mov    $0x1000,%esi
+   50794:	48 89 44 24 28       	mov    %rax,0x28(%rsp)
+   50799:	41 8b 49 08          	mov    0x8(%r9),%ecx
+   5079d:	b8 01 00 00 00       	mov    $0x1,%eax
+   507a2:	4c 89 4c 24 10       	mov    %r9,0x10(%rsp)
+   507a7:	44 8d 41 01          	lea    0x1(%rcx),%r8d
+   507ab:	41 83 f8 0a          	cmp    $0xa,%r8d
+   507af:	44 0f 43 c0          	cmovae %eax,%r8d
+   507b3:	89 4c 24 08          	mov    %ecx,0x8(%rsp)
+   507b7:	44 89 04 24          	mov    %r8d,(%rsp)
+   507bb:	e8 40 0a fb ff       	call   1200 <posix_memalign@plt>
+   507c0:	44 8b 04 24          	mov    (%rsp),%r8d
+   507c4:	8b 4c 24 08          	mov    0x8(%rsp),%ecx
+   507c8:	85 c0                	test   %eax,%eax
+   507ca:	4c 8b 4c 24 10       	mov    0x10(%rsp),%r9
+   507cf:	4c 8b 5c 24 18       	mov    0x18(%rsp),%r11
+   507d4:	4c 8b 54 24 20       	mov    0x20(%rsp),%r10
+   507d9:	0f 85 29 01 00 00    	jne    50908 <the_patch+0x338>
+   507df:	48 8b 54 24 30       	mov    0x30(%rsp),%rdx
+   507e4:	48 85 d2             	test   %rdx,%rdx
+   507e7:	0f 84 1b 01 00 00    	je     50908 <the_patch+0x338>
+   507ed:	89 c8                	mov    %ecx,%eax
+   507ef:	4c 89 14 24          	mov    %r10,(%rsp)
+   507f3:	48 83 c0 0c          	add    $0xc,%rax
+   507f7:	49 8b 34 c1          	mov    (%r9,%rax,8),%rsi
+   507fb:	48 85 f6             	test   %rsi,%rsi
+   507fe:	0f 84 fc 00 00 00    	je     50900 <the_patch+0x330>
+   50804:	48 89 d7             	mov    %rdx,%rdi
+   50807:	b9 00 02 00 00       	mov    $0x200,%ecx
+   5080c:	41 8d 40 0c          	lea    0xc(%r8),%eax
+   50810:	48 83 ec 08          	sub    $0x8,%rsp
+   50814:	f3 48 a5             	rep movsq %ds:(%rsi),%es:(%rdi)
+   50817:	48 8d 0c c5 00 00 00 00 	lea    0x0(,%rax,8),%rcx
+   5081f:	be 02 00 00 00       	mov    $0x2,%esi
+   50824:	49 89 14 c1          	mov    %rdx,(%r9,%rax,8)
+   50828:	48 8d 15 11 0d 00 00 	lea    0xd11(%rip),%rdx        # 51540 <_IO_stdin_used+0x540>
+   5082f:	4d 89 5c 09 b0       	mov    %r11,-0x50(%r9,%rcx,1)
+   50834:	4d 89 f1             	mov    %r14,%r9
+   50837:	4c 89 d9             	mov    %r11,%rcx
+   5083a:	48 8b 44 24 30       	mov    0x30(%rsp),%rax
+   5083f:	44 89 00             	mov    %r8d,(%rax)
+   50842:	49 8b 04 24          	mov    (%r12),%rax
+   50846:	48 8b 3d 13 28 00 00 	mov    0x2813(%rip),%rdi        # 53060 <stderr@GLIBC_2.2.5>
+   5084d:	41 50                	push   %r8
+   5084f:	49 89 c0             	mov    %rax,%r8
+   50852:	31 c0                	xor    %eax,%eax
+   50854:	e8 97 09 fb ff       	call   11f0 <__fprintf_chk@plt>
+   50859:	4c 8b 54 24 10       	mov    0x10(%rsp),%r10
+   5085e:	4d 03 54 24 18       	add    0x18(%r12),%r10
+   50863:	58                   	pop    %rax
+   50864:	4d 89 d1             	mov    %r10,%r9
+   50867:	5a                   	pop    %rdx
+   50868:	0f 1f 84 00 00 00 00 00 	nopl   0x0(%rax,%rax,1)
+   50870:	41 8b 41 08          	mov    0x8(%r9),%eax
+   50874:	48 89 ea             	mov    %rbp,%rdx
+   50877:	4c 29 fa             	sub    %r15,%rdx
+   5087a:	48 83 c0 0c          	add    $0xc,%rax
+   5087e:	49 8b 04 c1          	mov    (%r9,%rax,8),%rax
+   50882:	48 85 c0             	test   %rax,%rax
+   50885:	74 79                	je     50900 <the_patch+0x330>
+   50887:	48 01 d0             	add    %rdx,%rax
+   5088a:	80 7b 31 79          	cmpb   $0x79,0x31(%rbx)
+   5088e:	0f 84 b4 fd ff ff    	je     50648 <the_patch+0x78>
+   50894:	48 8b 93 50 02 00 00 	mov    0x250(%rbx),%rdx
+   5089b:	48 85 d2             	test   %rdx,%rdx
+   5089e:	0f 84 a4 fd ff ff    	je     50648 <the_patch+0x78>
+   508a4:	48 83 bb 58 02 00 00 00 	cmpq   $0x0,0x258(%rbx)
+   508ac:	0f 85 96 fd ff ff    	jne    50648 <the_patch+0x78>
+   508b2:	48 29 e8             	sub    %rbp,%rax
+   508b5:	0f 84 8d fd ff ff    	je     50648 <the_patch+0x78>
+   508bb:	49 01 44 d5 f8       	add    %rax,-0x8(%r13,%rdx,8)
+   508c0:	e9 83 fd ff ff       	jmp    50648 <the_patch+0x78>
+   508c5:	0f 1f 00             	nopl   (%rax)
+   508c8:	4d 8b 64 24 20       	mov    0x20(%r12),%r12
+   508cd:	4d 85 e4             	test   %r12,%r12
+   508d0:	0f 85 b9 fd ff ff    	jne    5068f <the_patch+0xbf>
+   508d6:	48 8b 44 24 38       	mov    0x38(%rsp),%rax
+   508db:	64 48 2b 04 25 28 00 00 00 	sub    %fs:0x28,%rax
+   508e4:	75 2f                	jne    50915 <the_patch+0x345>
+   508e6:	48 83 c4 48          	add    $0x48,%rsp
+   508ea:	4c 89 f7             	mov    %r14,%rdi
+   508ed:	5b                   	pop    %rbx
+   508ee:	5d                   	pop    %rbp
+   508ef:	41 5c                	pop    %r12
+   508f1:	41 5d                	pop    %r13
+   508f3:	41 5e                	pop    %r14
+   508f5:	41 5f                	pop    %r15
+   508f7:	e9 64 08 fb ff       	jmp    1160 <pthread_rwlock_unlock@plt>
+   508fc:	0f 1f 40 00          	nopl   0x0(%rax)
+   50900:	48 89 e8             	mov    %rbp,%rax
+   50903:	eb 85                	jmp    5088a <the_patch+0x2ba>
+   50905:	0f 1f 00             	nopl   (%rax)
+   50908:	4d 03 54 24 18       	add    0x18(%r12),%r10
+   5090d:	4d 89 d1             	mov    %r10,%r9
+   50910:	e9 5b ff ff ff       	jmp    50870 <the_patch+0x2a0>
+   50915:	e8 76 07 fb ff       	call   1090 <__stack_chk_fail@plt>
+   5091a:	66 0f 1f 44 00 00    	nopw   0x0(%rax,%rax,1)
 
-00000000000508d0 <user_defined>:
-   508d0:	f3 0f 1e fa          	endbr64
-   508d4:	48 83 ec 18          	sub    $0x18,%rsp
-   508d8:	64 48 8b 04 25 28 00 00 00 	mov    %fs:0x28,%rax
-   508e1:	48 89 44 24 08       	mov    %rax,0x8(%rsp)
-   508e6:	31 c0                	xor    %eax,%eax
-   508e8:	48 8b 44 24 08       	mov    0x8(%rsp),%rax
-   508ed:	64 48 2b 04 25 28 00 00 00 	sub    %fs:0x28,%rax
-   508f6:	75 05                	jne    508fd <user_defined+0x2d>
-   508f8:	48 83 c4 18          	add    $0x18,%rsp
-   508fc:	c3                   	ret
-   508fd:	e8 8e 07 fb ff       	call   1090 <__stack_chk_fail@plt>
-   50902:	66 66 2e 0f 1f 84 00 00 00 00 00 	data16 cs nopw 0x0(%rax,%rax,1)
-   5090d:	0f 1f 00             	nopl   (%rax)
+0000000000050920 <user_defined>:
+   50920:	f3 0f 1e fa          	endbr64
+   50924:	48 83 ec 18          	sub    $0x18,%rsp
+   50928:	64 48 8b 04 25 28 00 00 00 	mov    %fs:0x28,%rax
+   50931:	48 89 44 24 08       	mov    %rax,0x8(%rsp)
+   50936:	31 c0                	xor    %eax,%eax
+   50938:	48 8b 44 24 08       	mov    0x8(%rsp),%rax
+   5093d:	64 48 2b 04 25 28 00 00 00 	sub    %fs:0x28,%rax
+   50946:	75 05                	jne    5094d <user_defined+0x2d>
+   50948:	48 83 c4 18          	add    $0x18,%rsp
+   5094c:	c3                   	ret
+   5094d:	e8 3e 07 fb ff       	call   1090 <__stack_chk_fail@plt>
+   50952:	66 66 2e 0f 1f 84 00 00 00 00 00 	data16 cs nopw 0x0(%rax,%rax,1)
+   5095d:	0f 1f 00             	nopl   (%rax)
 
-0000000000050910 <mvmm_maybe_trigger_rollback>:
-   50910:	f3 0f 1e fa          	endbr64
-   50914:	48 83 ec 18          	sub    $0x18,%rsp
-   50918:	64 48 8b 04 25 28 00 00 00 	mov    %fs:0x28,%rax
-   50921:	48 89 44 24 08       	mov    %rax,0x8(%rsp)
-   50926:	31 c0                	xor    %eax,%eax
-   50928:	48 83 ff 05          	cmp    $0x5,%rdi
-   5092c:	75 52                	jne    50980 <mvmm_maybe_trigger_rollback+0x70>
-   5092e:	ba 01 00 00 00       	mov    $0x1,%edx
-   50933:	f0 0f b1 15 ed 3f 10 00 	lock cmpxchg %edx,0x103fed(%rip)        # 154928 <g_rollback_done>
-   5093b:	75 43                	jne    50980 <mvmm_maybe_trigger_rollback+0x70>
-   5093d:	e8 0e f9 ff ff       	call   50250 <mvmm_rollback_all.constprop.0>
-   50942:	48 8b 44 24 08       	mov    0x8(%rsp),%rax
-   50947:	64 48 2b 04 25 28 00 00 00 	sub    %fs:0x28,%rax
-   50950:	75 43                	jne    50995 <mvmm_maybe_trigger_rollback+0x85>
-   50952:	45 31 c0             	xor    %r8d,%r8d
-   50955:	b9 05 00 00 00       	mov    $0x5,%ecx
-   5095a:	be 02 00 00 00       	mov    $0x2,%esi
-   5095f:	31 c0                	xor    %eax,%eax
-   50961:	48 8b 3d f8 26 00 00 	mov    0x26f8(%rip),%rdi        # 53060 <stderr@GLIBC_2.2.5>
-   50968:	48 8d 15 99 0b 00 00 	lea    0xb99(%rip),%rdx        # 51508 <_IO_stdin_used+0x508>
-   5096f:	48 83 c4 18          	add    $0x18,%rsp
-   50973:	e9 78 08 fb ff       	jmp    11f0 <__fprintf_chk@plt>
-   50978:	0f 1f 84 00 00 00 00 00 	nopl   0x0(%rax,%rax,1)
-   50980:	48 8b 44 24 08       	mov    0x8(%rsp),%rax
-   50985:	64 48 2b 04 25 28 00 00 00 	sub    %fs:0x28,%rax
-   5098e:	75 05                	jne    50995 <mvmm_maybe_trigger_rollback+0x85>
-   50990:	48 83 c4 18          	add    $0x18,%rsp
-   50994:	c3                   	ret
-   50995:	e8 f6 06 fb ff       	call   1090 <__stack_chk_fail@plt>
+0000000000050960 <mvmm_maybe_trigger_rollback>:
+   50960:	f3 0f 1e fa          	endbr64
+   50964:	48 83 ec 18          	sub    $0x18,%rsp
+   50968:	64 48 8b 04 25 28 00 00 00 	mov    %fs:0x28,%rax
+   50971:	48 89 44 24 08       	mov    %rax,0x8(%rsp)
+   50976:	31 c0                	xor    %eax,%eax
+   50978:	48 83 ff 05          	cmp    $0x5,%rdi
+   5097c:	75 52                	jne    509d0 <mvmm_maybe_trigger_rollback+0x70>
+   5097e:	ba 01 00 00 00       	mov    $0x1,%edx
+   50983:	f0 0f b1 15 9d 3f 10 00 	lock cmpxchg %edx,0x103f9d(%rip)        # 154928 <g_rollback_done>
+   5098b:	75 43                	jne    509d0 <mvmm_maybe_trigger_rollback+0x70>
+   5098d:	e8 be f8 ff ff       	call   50250 <mvmm_rollback_all.constprop.0>
+   50992:	48 8b 44 24 08       	mov    0x8(%rsp),%rax
+   50997:	64 48 2b 04 25 28 00 00 00 	sub    %fs:0x28,%rax
+   509a0:	75 43                	jne    509e5 <mvmm_maybe_trigger_rollback+0x85>
+   509a2:	45 31 c0             	xor    %r8d,%r8d
+   509a5:	b9 05 00 00 00       	mov    $0x5,%ecx
+   509aa:	be 02 00 00 00       	mov    $0x2,%esi
+   509af:	31 c0                	xor    %eax,%eax
+   509b1:	48 8b 3d a8 26 00 00 	mov    0x26a8(%rip),%rdi        # 53060 <stderr@GLIBC_2.2.5>
+   509b8:	48 8d 15 49 0b 00 00 	lea    0xb49(%rip),%rdx        # 51508 <_IO_stdin_used+0x508>
+   509bf:	48 83 c4 18          	add    $0x18,%rsp
+   509c3:	e9 28 08 fb ff       	jmp    11f0 <__fprintf_chk@plt>
+   509c8:	0f 1f 84 00 00 00 00 00 	nopl   0x0(%rax,%rax,1)
+   509d0:	48 8b 44 24 08       	mov    0x8(%rsp),%rax
+   509d5:	64 48 2b 04 25 28 00 00 00 	sub    %fs:0x28,%rax
+   509de:	75 05                	jne    509e5 <mvmm_maybe_trigger_rollback+0x85>
+   509e0:	48 83 c4 18          	add    $0x18,%rsp
+   509e4:	c3                   	ret
+   509e5:	e8 a6 06 fb ff       	call   1090 <__stack_chk_fail@plt>
 
 Disassembly of section .fini:
 
-000000000005099c <_fini>:
-   5099c:	f3 0f 1e fa          	endbr64
-   509a0:	48 83 ec 08          	sub    $0x8,%rsp
-   509a4:	48 83 c4 08          	add    $0x8,%rsp
-   509a8:	c3                   	ret
+00000000000509ec <_fini>:
+   509ec:	f3 0f 1e fa          	endbr64
+   509f0:	48 83 ec 08          	sub    $0x8,%rsp
+   509f4:	48 83 c4 08          	add    $0x8,%rsp
+   509f8:	c3                   	ret
 
 Disassembly of section .rodata:
 
@@ -28846,19 +28869,18 @@ Disassembly of section .eh_frame_hdr:
    5182f:	ff                   	(bad)
    51830:	78 05                	js     51837 <__GNU_EH_FRAME_HDR+0xc7>
    51832:	00 00                	add    %al,(%rax)
-   51834:	20 ec                	and    %ch,%ah
+   51834:	70 ec                	jo     51822 <__GNU_EH_FRAME_HDR+0xb2>
    51836:	ff                   	(bad)
    51837:	ff                   	(bad)
-   51838:	bc 05 00 00 10       	mov    $0x10000005,%esp
+   51838:	bc 05 00 00 60       	mov    $0x60000005,%esp
    5183d:	ee                   	out    %al,(%dx)
    5183e:	ff                   	(bad)
    5183f:	ff 08                	decl   (%rax)
    51841:	06                   	(bad)
    51842:	00 00                	add    %al,(%rax)
-   51844:	60                   	(bad)
-   51845:	f1                   	int1
+   51844:	b0 f1                	mov    $0xf1,%al
    51846:	ff                   	(bad)
-   51847:	ff 80 06 00 00 a0    	incl   -0x5ffffffa(%rax)
+   51847:	ff 80 06 00 00 f0    	incl   -0xffffffa(%rax)
    5184d:	f1                   	int1
    5184e:	ff                   	(bad)
    5184f:	ff                   	.byte 0xff
@@ -29304,10 +29326,7 @@ Disassembly of section .eh_frame:
    51ced:	04 00                	add    $0x0,%al
    51cef:	00 60 e5             	add    %ah,-0x1b(%rax)
    51cf2:	ff                   	(bad)
-   51cf3:	ff                   	(bad)
-   51cf4:	3f                   	(bad)
-   51cf5:	01 00                	add    %eax,(%rax)
-   51cf7:	00 00                	add    %al,(%rax)
+   51cf3:	ff 8d 01 00 00 00    	decl   0x1(%rbp)
    51cf9:	42 0e                	rex.X (bad)
    51cfb:	10 8e 02 42 0e 18    	adc    %cl,0x180e4202(%rsi)
    51d01:	8d 03                	lea    (%rbx),%eax
@@ -29316,9 +29335,10 @@ Disassembly of section .eh_frame:
    51d0c:	05 48 0e 30 83       	add    $0x83300e48,%eax
    51d11:	06                   	(bad)
    51d12:	4e 0e                	rex.WRX (bad)
-   51d14:	40 03 0d 01 0a 0e 30 	rex add 0x300e0a01(%rip),%ecx        # 3013271c <_end+0x2ffdddec>
-   51d1b:	44 0e                	rex.R (bad)
-   51d1d:	28 41 0e             	sub    %al,0xe(%rcx)
+   51d14:	40 03 5b 01          	rex add 0x1(%rbx),%ebx
+   51d18:	0a 0e                	or     (%rsi),%cl
+   51d1a:	30 44 0e 28          	xor    %al,0x28(%rsi,%rcx,1)
+   51d1e:	41 0e                	rex.B (bad)
    51d20:	20 42 0e             	and    %al,0xe(%rdx)
    51d23:	18 42 0e             	sbb    %al,0xe(%rdx)
    51d26:	10 42 0e             	adc    %al,0xe(%rdx)
@@ -29326,11 +29346,9 @@ Disassembly of section .eh_frame:
    51d2c:	48 00 00             	rex.W add %al,(%rax)
    51d2f:	00 d8                	add    %bl,%al
    51d31:	04 00                	add    $0x0,%al
-   51d33:	00 5c e6 ff          	add    %bl,-0x1(%rsi,%riz,8)
-   51d37:	ff f0                	push   %rax
-   51d39:	01 00                	add    %eax,(%rax)
-   51d3b:	00 00                	add    %al,(%rax)
-   51d3d:	46 0e                	rex.RX (bad)
+   51d33:	00 ac e6 ff ff f0 01 	add    %ch,0x1f0ffff(%rsi,%riz,8)
+   51d3a:	00 00                	add    %al,(%rax)
+   51d3c:	00 46 0e             	add    %al,0xe(%rsi)
    51d3f:	10 8d 02 42 0e 18    	adc    %cl,0x180e4202(%rbp)
    51d45:	8c 03                	mov    %es,(%rbx)
    51d47:	41 0e                	rex.B (bad)
@@ -29353,7 +29371,7 @@ Disassembly of section .eh_frame:
    51d72:	41 0e                	rex.B (bad)
    51d74:	40 00 00             	rex add %al,(%rax)
    51d77:	00 74 00 00          	add    %dh,0x0(%rax,%rax,1)
-   51d7b:	00 24 05 00 00 00 e8 	add    %ah,-0x18000000(,%rax,1)
+   51d7b:	00 24 05 00 00 50 e8 	add    %ah,-0x17b00000(,%rax,1)
    51d82:	ff                   	(bad)
    51d83:	ff 4a 03             	decl   0x3(%rdx)
    51d86:	00 00                	add    %al,(%rax)
@@ -29394,7 +29412,7 @@ Disassembly of section .eh_frame:
    51dec:	08 49 0b             	or     %cl,0xb(%rcx)
    51def:	00 18                	add    %bl,(%rax)
    51df1:	00 00                	add    %al,(%rax)
-   51df3:	00 9c 05 00 00 d8 ea 	add    %bl,-0x15280000(%rbp,%rax,1)
+   51df3:	00 9c 05 00 00 28 eb 	add    %bl,-0x14d80000(%rbp,%rax,1)
    51dfa:	ff                   	(bad)
    51dfb:	ff 32                	push   (%rdx)
    51dfd:	00 00                	add    %al,(%rax)
@@ -29405,9 +29423,8 @@ Disassembly of section .eh_frame:
    51e0a:	00 00                	add    %al,(%rax)
    51e0c:	20 00                	and    %al,(%rax)
    51e0e:	00 00                	add    %al,(%rax)
-   51e10:	b8 05 00 00 fc       	mov    $0xfc000005,%eax
-   51e15:	ea                   	(bad)
-   51e16:	ff                   	(bad)
+   51e10:	b8 05 00 00 4c       	mov    $0x4c000005,%eax
+   51e15:	eb ff                	jmp    51e16 <__GNU_EH_FRAME_HDR+0x6a6>
    51e17:	ff 8a 00 00 00 00    	decl   0x0(%rdx)
    51e1d:	48 0e                	rex.W (bad)
    51e1f:	20 02                	and    %al,(%rdx)
@@ -29461,29 +29478,33 @@ Disassembly of section .dynamic:
    52cee:	00 00                	add    %al,(%rax)
    52cf0:	0d 00 00 00 00       	or     $0x0,%eax
    52cf5:	00 00                	add    %al,(%rax)
-   52cf7:	00 9c 09 05 00 00 00 	add    %bl,0x5(%rcx,%rcx,1)
-   52cfe:	00 00                	add    %al,(%rax)
-   52d00:	19 00                	sbb    %eax,(%rax)
-   52d02:	00 00                	add    %al,(%rax)
-   52d04:	00 00                	add    %al,(%rax)
-   52d06:	00 00                	add    %al,(%rax)
-   52d08:	c0 2c 05 00 00 00 00 00 	shrb   $0x0,0x0(,%rax,1)
-   52d10:	1b 00                	sbb    (%rax),%eax
-   52d12:	00 00                	add    %al,(%rax)
-   52d14:	00 00                	add    %al,(%rax)
-   52d16:	00 00                	add    %al,(%rax)
-   52d18:	08 00                	or     %al,(%rax)
-   52d1a:	00 00                	add    %al,(%rax)
-   52d1c:	00 00                	add    %al,(%rax)
-   52d1e:	00 00                	add    %al,(%rax)
-   52d20:	1a 00                	sbb    (%rax),%al
-   52d22:	00 00                	add    %al,(%rax)
-   52d24:	00 00                	add    %al,(%rax)
-   52d26:	00 00                	add    %al,(%rax)
-   52d28:	c8 2c 05 00          	enter  $0x52c,$0x0
-   52d2c:	00 00                	add    %al,(%rax)
-   52d2e:	00 00                	add    %al,(%rax)
-   52d30:	1c 00                	sbb    $0x0,%al
+   52cf7:	00 ec                	add    %ch,%ah
+   52cf9:	09 05 00 00 00 00    	or     %eax,0x0(%rip)        # 52cff <_DYNAMIC+0x2f>
+   52cff:	00 19                	add    %bl,(%rcx)
+   52d01:	00 00                	add    %al,(%rax)
+   52d03:	00 00                	add    %al,(%rax)
+   52d05:	00 00                	add    %al,(%rax)
+   52d07:	00 c0                	add    %al,%al
+   52d09:	2c 05                	sub    $0x5,%al
+   52d0b:	00 00                	add    %al,(%rax)
+   52d0d:	00 00                	add    %al,(%rax)
+   52d0f:	00 1b                	add    %bl,(%rbx)
+   52d11:	00 00                	add    %al,(%rax)
+   52d13:	00 00                	add    %al,(%rax)
+   52d15:	00 00                	add    %al,(%rax)
+   52d17:	00 08                	add    %cl,(%rax)
+   52d19:	00 00                	add    %al,(%rax)
+   52d1b:	00 00                	add    %al,(%rax)
+   52d1d:	00 00                	add    %al,(%rax)
+   52d1f:	00 1a                	add    %bl,(%rdx)
+   52d21:	00 00                	add    %al,(%rax)
+   52d23:	00 00                	add    %al,(%rax)
+   52d25:	00 00                	add    %al,(%rax)
+   52d27:	00 c8                	add    %cl,%al
+   52d29:	2c 05                	sub    $0x5,%al
+   52d2b:	00 00                	add    %al,(%rax)
+   52d2d:	00 00                	add    %al,(%rax)
+   52d2f:	00 1c 00             	add    %bl,(%rax,%rax,1)
    52d32:	00 00                	add    %al,(%rax)
    52d34:	00 00                	add    %al,(%rax)
    52d36:	00 00                	add    %al,(%rax)
