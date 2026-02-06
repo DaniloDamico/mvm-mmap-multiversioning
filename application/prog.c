@@ -1,7 +1,3 @@
-#include "mvm.h"
-#include "mvm.h"
-#include "mvm.h"
-#include "mvm.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -14,51 +10,34 @@
 
 #define NUM_THREADS 1
 
-#define MEM_SIZE (2<<21)
+#define MEM_SIZE 4096
+
 
 void* function(void * whoami){
-    long me = (long)whoami;
-    int *p;
+	int i;
+	int * p;
+	long me = (long)whoami;
+	char * aux;
+	
+	printf("thread %ld active\n",me);
 
-    printf("thread %ld active\n", me);
+	p = (int*)mmap(NULL, MEM_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, 0, 0);
 
-    p = (int*)mmap(NULL, MEM_SIZE, PROT_READ | PROT_WRITE,
-                   MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	if(!p){
+		printf("(%ld) mmap error - returning\n",me);
+		fflush(stdout);
+		return NULL;
+	}
 
-    if (p == MAP_FAILED) {
-INSTRUMENT;
-INSTRUMENT;
-INSTRUMENT;
-INSTRUMENT;
-        perror("mmap");
-        return NULL;
-    }
+	for(i = 0; i < 20; i++){
+		p[i] = i;
+	}
 
-    size_t page = (size_t)getpagesize();
-    size_t ints_per_page = page / sizeof(int);
+	for(i = 0; i < 20; i++){
+		printf("(%ld) p[%d] = %d\n", me, i, p[i]);
+		fflush(stdout);
+	}
 
-    int pages_to_touch = 64; // tocca 64 pagine diverse
-    for (int i = 0; i < pages_to_touch; i++) {
-INSTRUMENT;
-INSTRUMENT;
-INSTRUMENT;
-INSTRUMENT;
-        p[i * (int)ints_per_page] = (int)(me * 1000 + i);
-    }
-
-    // molte scritture per far avanzare il contatore (timestamp)
-    for (int round = 0; round < 20000; round++) {
-INSTRUMENT;
-INSTRUMENT;
-INSTRUMENT;
-INSTRUMENT;
-        int idx = (round % pages_to_touch) * (int)ints_per_page;
-        p[idx] = p[idx] + 1;
-    }
-
-    printf("thread %ld done, sample=%d\n", me, p[0]);
-    fflush(stdout);
-    return NULL;
 }
 
 
@@ -71,22 +50,11 @@ int main(int argc, char * argv){
 
 job:
 	pthread_create(&tid[i],NULL,function,(void*)i);
-	if(++i < NUM_THREADS) {
-INSTRUMENT;
-INSTRUMENT;
-INSTRUMENT;
-	INSTRUMENT;
-goto job;}
+	if(++i < NUM_THREADS) goto job;
 
 	for(i=0;i<NUM_THREADS;i++){
-INSTRUMENT;
-INSTRUMENT;
-INSTRUMENT;
-INSTRUMENT;
 		pthread_join(tid[i],NULL);
 	}
 
         return 0;
 }
-
-

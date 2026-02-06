@@ -13,7 +13,7 @@ LIBS = -lpthread
 # max number of versions for each allocated subregion
 MVMM_MAX_VERSIONS ?= 10
 # number of writes to trigger a version switch
-ROTATE_EVERY ?= 10000
+ROTATE_EVERY ?= 2
 
 
 INCLUDE = $(PWD)/include
