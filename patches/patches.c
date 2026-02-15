@@ -265,9 +265,8 @@ static void mvmm_region_register(void *base, size_t len)
     g_regions_head = node;
     pthread_rwlock_unlock(&g_regions_lock);
 
-    MVMM_LOG(stderr,
-             "[mvmm] region registered base=%p len=%zu pages=%zu page_size=%d\n",
-             base, len, r->npages, MVMM_PAGE_SIZE);
+    MVMM_LOG("[mvmm] region registered base=%p len=%zu pages=%zu page_size=%d\n",
+            base, len, r->npages, MVMM_PAGE_SIZE);
 }
 
 void *__real_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
@@ -402,18 +401,18 @@ void the_patch(unsigned long mem, unsigned long regs)
     if (ea == 0)
         return;
 
-    size_t sz = (size_t)ins->data_size;
-    if (sz != 0 && mvmm_is_cross_page(ea, sz))
-    {
-        fprintf(stderr, "[mvmm] UNSUPPORTED cross-page %c ea=%p size=%zu\n",
-                ins->type, (void *)ea, sz);
-        return;
-    }
-
     // trova regione tra quelle tracciate
     mvmm_region *r = mvmm_find_region(ea);
     if (!r)
         return;
+
+    size_t sz = (size_t)ins->data_size;
+    if (sz != 0 && mvmm_is_cross_page(ea, sz))
+    {
+        MVMM_LOG("[mvmm] UNSUPPORTED cross-page %c ea=%p size=%zu\n",
+                 ins->type, (void *)ea, sz);
+        return;
+    }
 
     // calcola ea' (versione corrente)
     int is_store = (ins->type == 's');
@@ -489,8 +488,8 @@ static void mvmm_region_rollback(mvmm_region *r, uint64_t target_ts)
             }
         }
 
-        MVMM_LOG(stderr, "[mvmm] rollback page=%zu choose slot=%u best_ts=%lu\n",
-                 page_idx, best, (unsigned long)best_ts);
+    MVMM_LOG("[mvmm] rollback page=%zu choose slot=%u best_ts=%lu\n",
+            page_idx, best, (unsigned long)best_ts);
     }
 }
 
