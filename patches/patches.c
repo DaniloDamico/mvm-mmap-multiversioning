@@ -16,15 +16,30 @@
 #endif
 
 #ifndef ROTATE_EVERY
-#define ROTATE_EVERY 2
+#define ROTATE_EVERY 1000
 #endif
 
 #define MVMM_PAGE_SIZE 4096
 
-// per una demo mettiamo il rollback dopo 500 scritture
-#define MVMM_ROLLBACK_AT_WRITES 5
+// ogni quante scritture fare rollback
+#define MVMM_ROLLBACK_AT_WRITES 10000
 
-static _Atomic int g_rollback_done = 0;
+#define MVMM_DEBUG 0
+
+// se il flag é abilitato posso evitare di riallocare memoria ogni volta che faccio copy on write
+// serve per il benchmark
+#define SINGLE_THREAD 1
+
+#if MVMM_DEBUG
+#define MVMM_LOG(...) fprintf(stderr, __VA_ARGS__)
+#else
+#define MVMM_LOG(...) \
+    do                \
+    {                 \
+    } while (0)
+#endif
+
+static _Atomic uint64_t g_last_rollback_wc = 0;
 
 /*
  * Stato per pagina
@@ -250,9 +265,9 @@ static void mvmm_region_register(void *base, size_t len)
     g_regions_head = node;
     pthread_rwlock_unlock(&g_regions_lock);
 
-    fprintf(stderr,
-            "[mvmm] region registered base=%p len=%zu pages=%zu page_size=%d\n",
-            base, len, r->npages, MVMM_PAGE_SIZE);
+    MVMM_LOG(stderr,
+             "[mvmm] region registered base=%p len=%zu pages=%zu page_size=%d\n",
+             base, len, r->npages, MVMM_PAGE_SIZE);
 }
 
 void *__real_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
@@ -316,30 +331,38 @@ static inline uintptr_t mvmm_translate_ea(mvmm_region *r,
                 if (next >= MVMM_MAX_VERSIONS)
                     next = 1; // non usare 0 (mantengo la baseline cosí)
 
-                void *dst = mvmm_alloc_page();
-                if (dst)
-                {
-                    void *src = atomic_load_explicit(&ps->slots[cur], memory_order_acquire);
-                    if (!src)
+                void *dst = NULL;
+
+#if SINGLE_THREAD
+                // In single-thread: riusa lo slot next se già allocato (evita OOM).
+                dst = atomic_load_explicit(&ps->slots[next], memory_order_acquire);
+                if (!dst)
+                { // se non é allocata allocala
+                    dst = mvmm_alloc_page();
+                    if (!dst)
                         return ea;
-
-                    // Copia la versione corrente nello slot nuovo
-                    memcpy(dst, src, MVMM_PAGE_SIZE);
-
-                    /*
-                     * - slots[next] punta alla nuova pagina
-                     * - slot_ts[next] memorizza il timestamp della versione
-                     * - cur_slot diventa next, quindi da qui in poi load/store vedono la nuova versione
-                     *
-                     * TODO free della vecchia pagina quando nessuno la usa più
-                     */
                     atomic_store_explicit(&ps->slots[next], dst, memory_order_release);
-                    atomic_store_explicit(&ps->slot_ts[next], ts, memory_order_release);
-                    atomic_store_explicit(&ps->cur_slot, next, memory_order_release);
-
-                    fprintf(stderr, "[mvmm] COW ts=%lu region=%p page=%zu slot=%u\n",
-                            (unsigned long)ts, (void *)r->base, page_idx, next);
                 }
+#else
+                // In multi-thread alloc sempre nuova pagina
+                dst = mvmm_alloc_page();
+                if (!dst)
+                    return ea;
+#endif
+
+                void *src = atomic_load_explicit(&ps->slots[cur], memory_order_acquire);
+                if (!src)
+                    return ea;
+
+                memcpy(dst, src, MVMM_PAGE_SIZE);
+
+                atomic_store_explicit(&ps->slot_ts[next], ts, memory_order_release);
+                atomic_store_explicit(&ps->cur_slot, next, memory_order_release);
+
+#if MVMM_DEBUG
+                MVMM_LOG("[mvmm] COW ts=%lu region=%p page=%zu slot=%u\n",
+                         (unsigned long)ts, (void *)r->base, page_idx, next);
+#endif
             }
         }
     }
@@ -350,6 +373,15 @@ static inline uintptr_t mvmm_translate_ea(mvmm_region *r,
     if (!curp)
         return ea;
     return (uintptr_t)curp + off;
+}
+
+/**
+ * Controlla se l'accesso attraversa il confine di pagina, dato un indirizzo effettivo e una dimensione.
+ */
+static inline int mvmm_is_cross_page(uintptr_t ea, size_t size)
+{
+    size_t off = (size_t)(ea & (MVMM_PAGE_SIZE - 1));
+    return (off + size) > MVMM_PAGE_SIZE;
 }
 
 /*
@@ -369,6 +401,14 @@ void the_patch(unsigned long mem, unsigned long regs)
     uintptr_t ea = mvm_get_ea_u(ins, regs);
     if (ea == 0)
         return;
+
+    size_t sz = (size_t)ins->data_size;
+    if (sz != 0 && mvmm_is_cross_page(ea, sz))
+    {
+        fprintf(stderr, "[mvmm] UNSUPPORTED cross-page %c ea=%p size=%zu\n",
+                ins->type, (void *)ea, sz);
+        return;
+    }
 
     // trova regione tra quelle tracciate
     mvmm_region *r = mvmm_find_region(ea);
@@ -437,17 +477,20 @@ static void mvmm_region_rollback(mvmm_region *r, uint64_t target_ts)
         atomic_store_explicit(&ps->last_ts_seen, UINT64_MAX, memory_order_release);
 
         // Invalida tutte le versioni future
-        for (uint32_t s = 1; s < MVMM_MAX_VERSIONS; s++) {
+        for (uint32_t s = 1; s < MVMM_MAX_VERSIONS; s++)
+        {
             uint64_t ts = atomic_load_explicit(&ps->slot_ts[s], memory_order_acquire);
-            if (ts != UINT64_MAX && ts > target_ts) {
+            if (ts != UINT64_MAX && ts > target_ts)
+            {
                 atomic_store_explicit(&ps->slot_ts[s], UINT64_MAX, memory_order_release);
+#if !SINGLE_THREAD
                 atomic_store_explicit(&ps->slots[s], NULL, memory_order_release);
+#endif
             }
         }
 
-
-        fprintf(stderr, "[mvmm] rollback page=%zu choose slot=%u best_ts=%lu\n",
-        page_idx, best, (unsigned long)best_ts);
+        MVMM_LOG(stderr, "[mvmm] rollback page=%zu choose slot=%u best_ts=%lu\n",
+                 page_idx, best, (unsigned long)best_ts);
     }
 }
 
@@ -456,13 +499,15 @@ static void mvmm_dump_state_locked(void)
     fprintf(stderr, "[mvmm] ===== DUMP STATE BEGIN =====\n");
 
     size_t rix = 0;
-    for (mvmm_region_node *n = g_regions_head; n; n = n->next, rix++) {
+    for (mvmm_region_node *n = g_regions_head; n; n = n->next, rix++)
+    {
         mvmm_region *r = &n->r;
         fprintf(stderr, "[mvmm] region[%zu] base=%p len=%zu npages=%zu\n",
-                rix, (void*)r->base, r->len, r->npages);
+                rix, (void *)r->base, r->len, r->npages);
 
         /* Per non stampare troppo, se vuoi limita il numero di pagine */
-        for (size_t page_idx = 0; page_idx < r->npages; page_idx++) {
+        for (size_t page_idx = 0; page_idx < r->npages; page_idx++)
+        {
             mvmm_page_state *ps = &r->pages[page_idx];
 
             uint32_t cur = atomic_load_explicit(&ps->cur_slot, memory_order_acquire);
@@ -472,13 +517,17 @@ static void mvmm_dump_state_locked(void)
                     page_idx, cur,
                     (last == UINT64_MAX) ? "UINT64_MAX" : "set");
 
-            for (uint32_t s = 0; s < MVMM_MAX_VERSIONS; s++) {
+            for (uint32_t s = 0; s < MVMM_MAX_VERSIONS; s++)
+            {
                 uint64_t ts = atomic_load_explicit(&ps->slot_ts[s], memory_order_acquire);
                 void *p = atomic_load_explicit(&ps->slots[s], memory_order_acquire);
 
-                if (ts == UINT64_MAX && p == NULL) {
+                if (ts == UINT64_MAX && p == NULL)
+                {
                     fprintf(stderr, "    slot[%u]: EMPTY\n", s);
-                } else {
+                }
+                else
+                {
                     fprintf(stderr, "    slot[%u]: ts=%s%lu ptr=%p%s\n",
                             s,
                             (ts == UINT64_MAX) ? "UINT64_MAX(" : "",
@@ -493,42 +542,60 @@ static void mvmm_dump_state_locked(void)
     fprintf(stderr, "[mvmm] ===== DUMP STATE END =====\n");
 }
 
-
 static void mvmm_rollback_all(uint64_t target_ts)
 {
     pthread_rwlock_rdlock(&g_regions_lock);
 
     /* dump prima del rollback */
-    fprintf(stderr, "[mvmm] rollback_all target_ts=%lu (BEFORE)\n", (unsigned long)target_ts);
+#if MVMM_DEBUG
+    fprintf(stderr, "[mvmm] rollback_all target_ts=%lu (BEFORE)\n",
+            (unsigned long)target_ts);
     mvmm_dump_state_locked();
+#endif
 
-    for (mvmm_region_node *n = g_regions_head; n; n = n->next) {
+    for (mvmm_region_node *n = g_regions_head; n; n = n->next)
+    {
         mvmm_region_rollback(&n->r, target_ts);
     }
 
     /* dump dopo il rollback */
-    fprintf(stderr, "[mvmm] rollback_all target_ts=%lu (AFTER)\n", (unsigned long)target_ts);
+#if MVMM_DEBUG
+    fprintf(stderr, "[mvmm] rollback_all target_ts=%lu (AFTER)\n",
+            (unsigned long)target_ts);
     mvmm_dump_state_locked();
+#endif
 
     pthread_rwlock_unlock(&g_regions_lock);
 }
 
 static inline void mvmm_maybe_trigger_rollback(uint64_t wc_now)
 {
-    if (wc_now != MVMM_ROLLBACK_AT_WRITES)
+    if (MVMM_ROLLBACK_AT_WRITES == 0)
         return;
 
-    int expected = 0;
-    if (!atomic_compare_exchange_strong_explicit(&g_rollback_done, &expected, 1,
-                                                 memory_order_acq_rel, memory_order_acquire))
-    {
-        return; // qualcun altro lo ha già fatto
-    }
+    // trigger solo su multipli esatti
+    if ((wc_now % (uint64_t)MVMM_ROLLBACK_AT_WRITES) != 0)
+        return;
 
-    // torniamo alla prima era
-    uint64_t target_ts = 0;
+    // assicurati che per quel wc ci entri una sola volta (lock-free)
+    uint64_t last = atomic_load_explicit(&g_last_rollback_wc, memory_order_acquire);
+    if (last == wc_now)
+        return;
+
+    if (!atomic_compare_exchange_strong_explicit(&g_last_rollback_wc, &last, wc_now,
+                                                 memory_order_acq_rel, memory_order_acquire))
+        return;
+
+    // era corrente (coerente con la tua definizione)
+    uint64_t ts_now = wc_now / (uint64_t)ROTATE_EVERY;
+
+    // torna due versioni indietro
+    uint64_t target_ts = (ts_now >= 2) ? (ts_now - 2) : 0;
 
     mvmm_rollback_all(target_ts);
-    fprintf(stderr, "[mvmm] rollback TRIGGERED at wc=%lu target_ts=%lu\n",
-            (unsigned long)wc_now, (unsigned long)target_ts);
+
+#if MVMM_DEBUG
+    fprintf(stderr, "[mvmm] rollback TRIGGERED wc=%lu ts_now=%lu target_ts=%lu\n",
+            (unsigned long)wc_now, (unsigned long)ts_now, (unsigned long)target_ts);
+#endif
 }

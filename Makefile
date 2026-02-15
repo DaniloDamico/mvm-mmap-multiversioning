@@ -13,7 +13,7 @@ LIBS = -lpthread
 # max number of versions for each allocated subregion
 MVMM_MAX_VERSIONS ?= 10
 # number of writes to trigger a version switch
-ROTATE_EVERY ?= 2
+#ROTATE_EVERY ?= 2
 
 
 INCLUDE = $(PWD)/include
@@ -40,7 +40,7 @@ UDTEMPOBJ = -Duser_defined_temp_obj_file=\"$(USER_DEFINED)/$(USER_DEFINED_OBJ_FI
 
 SECURITY_FLAGS = -pie -fPIE -fstack-protector-all
 
-ADDITIONAL_FLAGS = -O3 -DASM_PREAMBLE -DAPPLY_PATCHES -DMVMM_MAX_VERSIONS=$(MVMM_MAX_VERSIONS) -DROTATE_EVERY=$(ROTATE_EVERY)
+ADDITIONAL_FLAGS = -O3 -DASM_PREAMBLE -DAPPLY_PATCHES -DMVMM_MAX_VERSIONS=$(MVMM_MAX_VERSIONS) # -DROTATE_EVERY=$(ROTATE_EVERY)
 # -DVERBOSE
 #NOTE: 
 #the ASM_PREAMBLE macro enables building a demo patch for each memory access instruction
